@@ -46,6 +46,14 @@ for subjn = 1:length(subjcell)
     addpath(fullfile(code_dir,'MP-PCA-Denoising'));
     addpath('/home/common/matlab/fieldtrip/qsub')
 
+    % Get all paths
+    allPaths = strsplit(path, pathsep);
+
+    % Filter out MATLAB's built-in paths (keep only user-added ones)
+    matlabRoot = matlabroot;
+    userPaths = allPaths(~startsWith(allPaths, matlabRoot));
+    % userPaths = userPaths(~contains(userPaths, 'toolbox'));
+
     if preprocessing
         ProcessingPipelineModular
     end

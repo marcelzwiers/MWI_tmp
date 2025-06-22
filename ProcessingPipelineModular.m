@@ -1,3 +1,5 @@
+function ProcessingPipelineModular(subj_label, run_label, bids_ses_dir, derivative_FSL_dir, derivative_SEPIA_dir, derivative_MRI_SYNTHSEG_dir)
+
 % ProcessingPipeline
 debugmode = 1;
 % 0 move data to derivatives folder derivatives/sub-x002/Prot1/Flip1/
@@ -123,7 +125,6 @@ unix(['flirt -in ' B1map ' -ref ' RefProt ' -applyxfm -init ' extension ' -out '
 
 %% applies co-registration to all the separate datasets
 clear input
-count_dataset = 0;
 count = 0;
 for count_prot = [1]
     for count_flip = 1:length(prot{1}.flip)

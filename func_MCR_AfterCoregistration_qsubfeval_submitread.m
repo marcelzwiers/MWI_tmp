@@ -1,4 +1,3 @@
-
 function func_MCR_AfterCoregistration_qsubfeval_submitread(input,output,task)
 % func_MCR_AfterCoregistration_qsubfeval_submitread(input,output)
 % input.acq_str{countflip} %input acq_str of MGRE data
@@ -94,12 +93,12 @@ dims = size(img);
 % true_flip_angle_fn      = [subj_label '_' sess_label '_acq-famp_run-1_TB1TFL_space-withinGRE-' kp{1} '.nii.gz'];
 true_flip_angle_json    = [input.subj_label '_acq-famp_run-1_TB1TFL.json'];
 true_flip_angle_fn      = [input.subj_label '_acq-famp_run-1_TB1TFLProtocolSpace.nii.gz'];
-true_flip_angle         = load_nii_img_only( fullfile(input.derivative_FSL_dir, true_flip_angle_fn));
+true_flip_angle         = load_nii_img_only(fullfile(input.derivative_FSL_dir, true_flip_angle_fn));
 
 if isfield(input,'B1scaleFactor')
     b1                  = true_flip_angle / input.B1scaleFactor;
 else
-    b1_header           = jsondecode( fileread( fullfile( converted_b1_dir,true_flip_angle_json)));
+    b1_header           = jsondecode(fileread(fullfile(converted_b1_dir,true_flip_angle_json)));
     b1                  = true_flip_angle / 10 / b1_header.FlipAngle;
 end
 % figure
@@ -128,16 +127,16 @@ end
 disp(['Denoising:' fullfile(input.derivative_SEPIA_dir, magn_fn)])
 if output.MPPCAdenoise == 1
     if  or(task.ReSubmit_MissingJobs,task.Submit_Job)
-        [denoised,~,~] = denoise(reshape(img,[dims(1:3) prod(dims(4:5))]),[5 5 5],mask);
-        img = reshape(denoised,dims);
+        [denoised,~,~] = denoise(reshape(img, [dims(1:3) prod(dims(4:5))]), [5 5 5], mask);
+        img = reshape(denoised, dims);
         clear denoised
     end
     PreProcessing ='MPPCAdenoising';
 else
     if output.MPPCAdenoise == 2
         if  or(task.ReSubmit_MissingJobs,task.Submit_Job)
-            [denoised,~,~] = denoise(reshape(img,[dims(1:3) prod(dims(4:5))]),[3 3 3],mask);
-            img = reshape(denoised,dims);
+            [denoised,~,~] = denoise(reshape(img, [dims(1:3) prod(dims(4:5))]), [3 3 3], mask);
+            img = reshape(denoised, dims);
             clear denoised
         end
         PreProcessing ='MPPCAdenoising3';
@@ -183,9 +182,9 @@ imgParam.rho_mw      = kappa_mw/kappa_iew;
 imgParam.E           = 0.02;
 imgParam.x_i         = -0.1;
 imgParam.x_a         = -0.1;
-imgParam.output_dir = fullfile(output.derivative_MWI_dir, 'MCR', PreProcessing, ['using_', num2str(nFA),'_flipangle'],['quadraticW']);
+imgParam.output_dir = fullfile(output.derivative_MWI_dir, 'MCR', PreProcessing, ['using_' num2str(nFA) '_flipangle'], 'quadraticW');
 gre_basename    = [input.subj_label '_' output.acq_str '_' input.run_label];
-imgParam.output_filename = [gre_basename '_MEGRE_MWI-MCR_',num2str(nFA),'FA'];
+imgParam.output_filename = [gre_basename '_MEGRE_MWI-MCR_' num2str(nFA) 'FA'];
 
 % acquisition parameters
 imgParam.te         = sepia_header{end}.TE;

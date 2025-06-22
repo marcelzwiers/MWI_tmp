@@ -46,7 +46,6 @@ for subjn = 1:length(subjcell)
     addpath(genpath(fullfile(code_dir,'utils')));
     addpath(fullfile(code_dir,'MP-PCA-Denoising'));
     addpath(fullfile(code_dir,'qsub'));
-    addpath(fullfile(code_dir,'qsub'));
     % addpath('/home/common/matlab/fieldtrip/qsub')
 
     if preprocessing

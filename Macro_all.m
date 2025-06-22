@@ -12,12 +12,12 @@ function Macro_all(bids_dir, preprocessing, SepiaPrep, fittingMCR, fittingMCRGPU
 %   fittingMCR    - CPU-based fitting (0/1, default: 1)
 %   fittingMCRGPU - GPU-based fitting (0/1, default: 0)
 %   writingMCR    - Result writing (0/1, default: 0)
-%   acqname       - Acquisition name (default: 'GRE')
+%   acqname       - Acquisition name coded in the filename as `sub-label_acq[acqname]FA##_run-#..` (default: 'fl3d')
 %   run           - Run label (default: {'run-1'})
 
 % Set default values
 def_bids_dir      = "/project/3055010.04/RunningProjects/MyelinWaterImaging/bidsSiemensVariantsNew";
-def_acqname       = 'GRE';
+def_acqname       = 'fl3d';
 def_run_label     = 'run-1';
 def_preprocessing = 1;
 def_SepiaPrep     = 1;
@@ -36,8 +36,8 @@ if nargin == 1 && ischar(bids_dir) && (strcmpi(bids_dir, '--help') || strcmpi(bi
     fprintf('  fittingMCR    - CPU-based fitting (0/1, default: %d)\n', def_fittingMCR);
     fprintf('  fittingMCRGPU - GPU-based fitting (0/1, default: %d)\n\n', def_fittingMCRGPU);
     fprintf('  writingMCR    - Result writing (0/1, default: %d)\n', def_writingMCR);
-    fprintf('  acqname       - Acquisition name (default: %s)\n', def_acqname);
-    fprintf('  run_label     - Run label (default: %s)\n', def_run_label);
+    fprintf('  acqname       - Acquisition name coded in the filename as `sub-label_acq[acqname]FA##_run-#..` (default: %s)\n', def_acqname);
+    fprintf('  run           - Run label (default: %s)\n', def_run_label);
     return
 end
 

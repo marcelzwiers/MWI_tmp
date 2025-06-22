@@ -1,7 +1,7 @@
-function ProcessingPipelineModular(subj_label, run_label, bids_ses_dir, derivative_FSL_dir, derivative_SEPIA_dir, derivative_MRI_SYNTHSEG_dir)
+function ProcessingPipelineModular(prot, subj_label, run_label, bids_ses_dir, derivative_FSL_dir, derivative_SEPIA_dir, derivative_MRI_SYNTHSEG_dir)
 
 % ProcessingPipeline
-debugmode = 1;
+
 % 0 move data to derivatives folder derivatives/sub-x002/Prot1/Flip1/
 % magnitude and phase
 % 1 mcflirt first echo of each acquisition magnitude data
@@ -113,8 +113,8 @@ for count_flip = 1:length(prot{1}.flip)
 end
 
 RefProt       = S0_target{count_flip+1};
-AnatB1        = fullfile(derivative_SIEMENS_dir, 'fmap', [subj_label '_acq-anat_' run_label '_TB1TFL.nii.gz']);
-B1map         = fullfile(derivative_SIEMENS_dir, 'fmap', [subj_label '_acq-famp_' run_label '_TB1TFL.nii.gz']);
+AnatB1        = fullfile(bids_ses_dir, 'fmap', [subj_label '_acq-anat_' run_label '_TB1TFL.nii.gz']);
+B1map         = fullfile(bids_ses_dir, 'fmap', [subj_label '_acq-famp_' run_label '_TB1TFL.nii.gz']);
 AnatB1_target = fullfile(derivative_FSL_dir, [subj_label '_acq-anat_' run_label '_TB1TFLProtocolSpace.nii.gz']);
 B1map_target  = fullfile(derivative_FSL_dir, [subj_label '_acq-famp_' run_label '_TB1TFLProtocolSpace.nii.gz']);
 extension     = fullfile(Dataset{count_flip+1}.outdir, 'TransformToProtocolSpace.mat');

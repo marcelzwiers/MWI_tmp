@@ -31,10 +31,20 @@ while IFS= read -r -d $'\0' file; do
     ALL_FILES+=("-a" "$file")
 done < <(find . -type f "${find_exclude[@]}" -print0)
 
+# Get the user paths added during runtime
+MCR_ARGS=()
+while IFS= read -r path; do
+    # Clean carriage returns (if any) and add to list
+    clean_path=$(echo "$path" | tr -d '\r')
+    MCR_ARGS+=("-a" "$clean_path")
+done < Macro_all_paths.txt
+echo "User paths added: ${#MCR_ARGS[@]}"
+
 # Compile command
 echo "Compiling with mcc (${#ALL_FILES[@]} files included)..."
 $MATLAB_COMPILER -m "$SOURCE_FILE" \
     "${ALL_FILES[@]}" \
+    "${MCR_ARGS[@]}" \
     -d "$OUTPUT_DIR" \
     -v \
     -R '-nodisplay' \

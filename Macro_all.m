@@ -97,7 +97,7 @@ for count_flip = 1:length(prot.flip)
 end
 
 % Inform the user about the parameters
-fprintf('Running Macro_all with the following parameters:\n');
+fprintf('\nRunning Macro_all with the following parameters:\n');
 fprintf('  bids_dir:      %s\n', bids_dir);
 fprintf('  preprocessing: %d\n', preprocessing);
 fprintf('  SepiaPrep:     %d\n', SepiaPrep);
@@ -110,18 +110,7 @@ fprintf('  flip angles:   %s\n', num2str(prot.flip));
 fprintf('  echo numbers:  %s\n', num2str(prot.echo));
 
 % Set up the path: TODO: Remove tinkering with paths, they are static in the compiled version
-code_dir = fileparts(mfilename('fullpath'));
-addpath(fullfile(code_dir,'sepia_1.2.2.5'));            % https://github.com/kschan0214/sepi
-addpath(code_dir);
-addpath(genpath(fullfile(code_dir,'despot1')));         % https://github.com/kschan0214/despot1
-addpath(genpath(fullfile(code_dir,'EPG-X'))); 	        % KCL extended phase graphs
-addpath(genpath(fullfile(code_dir,'utils')));
-addpath(fullfile(code_dir,'MP-PCA-Denoising'));
-addpath(fullfile(code_dir,'qsub'));
-if fittingMCRGPU
-    addpath(genpath(fullfile(code_dir,'gacelle')))      % /project/3055010.04/RunningProjects/AskAdam/gacelle/
-end
-sepia_addpath
+Macro_all_path
 
 % Process all subjects in the BIDS directory
 subjects = dir(fullfile(bids_dir, 'sub-*'));
@@ -137,17 +126,21 @@ for subjn = 1:length(subjects)
     end
 
     if SepiaPrep
-        SEPIA_03_standard_pipeline(prot, subj_label, run_label, bids_ses_dir, derivative_FSL_dir, derivative_SEPIA_dir, derivative_MRI_SYNTHSEG_dir)
+        SEPIA_03_standard_pipeline
         script_SCR
     end
 
     % Some solvers have similar names in various packages and we have to make sure the MWI is the one that gets used
-    warning off
-    rmpath(genpath(fullfile(code_dir,'sepia_1.2.2.5')));
-    rmpath(genpath(fullfile(code_dir,'mwi')));
-    warning on
-    addpath(genpath(fullfile(code_dir,'mwi')));
-
+    if ~isdeployed
+        warning off
+        rmpath(genpath(fullfile(code_dir,'sepia_1.2.2.5')));
+        rmpath(genpath(fullfile(code_dir,'mwi')));
+        warning on
+        addpath(genpath(fullfile(code_dir,'mwi')));
+    else
+        disp('Running in compiled mode, not changing paths!!!');
+    end
+    
     input                      = struct();
     input.derivative_SEPIA_dir = derivative_SEPIA_dir;
     input.derivative_FSL_dir   = derivative_FSL_dir;
@@ -197,3 +190,43 @@ for subjn = 1:length(subjects)
 
 end
 disp("Finished processing")
+
+
+function Macro_all_path
+% Set and saves the matlab userpath for the compiled version of Macro_all.m
+
+if isdeployed
+    return
+end
+
+restoredefaultpath;
+rehash toolboxcache;
+
+% Get the original path
+originalPaths = strsplit(path, pathsep);
+
+% Add the userpaths
+code_dir = fileparts(mfilename('fullpath'));
+addpath(fullfile(code_dir,'sepia_1.2.2.5'));            % https://github.com/kschan0214/sepi
+addpath(code_dir);
+addpath(genpath(fullfile(code_dir,'despot1')));         % https://github.com/kschan0214/despot1
+addpath(genpath(fullfile(code_dir,'EPG-X'))); 	        % KCL extended phase graphs
+addpath(genpath(fullfile(code_dir,'utils')));
+addpath(fullfile(code_dir,'MP-PCA-Denoising'));
+addpath(fullfile(code_dir,'qsub'));
+addpath(genpath(fullfile(code_dir,'gacelle')))          % /project/3055010.04/RunningProjects/AskAdam/gacelle/
+addpath(genpath(fullfile(code_dir,'mwi')));
+sepia_addpath
+
+% Get the new path and find the difference
+newPaths   = strsplit(path, pathsep);
+addedPaths = setdiff(newPaths, originalPaths);
+addedPaths = addedPaths(~contains(addedPaths, '.git'));
+% addedPaths = addedPaths(~cellfun(@isempty, addedPaths));
+
+% Save to file
+fid = fopen('Macro_all_paths.txt', 'w');
+for i = 1:numel(addedPaths)
+    fprintf(fid, '%s\n', addedPaths{i});
+end
+fclose(fid);

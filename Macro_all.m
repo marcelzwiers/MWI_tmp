@@ -106,8 +106,8 @@ fprintf('  fittingMCRGPU: %d\n', fittingMCRGPU);
 fprintf('  writingMCR: %d\n', writingMCR);
 fprintf('  acqname: %s\n', acqname);
 fprintf('  run_label: %s\n', run_label);
-fprintf('  protocol flip: %s\n', str(prot.flip));
-fprintf('  protocol echo: %s\n', str(prot.echo));
+fprintf('  protocol flip: %s\n', num2str(prot.flip));
+fprintf('  protocol echo: %s\n', num2str(prot.echo));
 
 % Set up the path
 code_dir = fileparts(mfilename('fullpath'));
@@ -130,7 +130,7 @@ for subjn = 1:length(subjects)
 
     subj_label = subjects(subjn).name;
     subject_directory_master
-    fprintf('--> Processing: %s (%d/%d)\n', subj_label, subjn, length(subjects));
+    fprintf('\n--> Processing: %s (%d/%d)\n', subj_label, subjn, length(subjects));
 
     if preprocessing
         ProcessingPipelineModular(prot, subj_label, run_label, bids_ses_dir, derivative_FSL_dir, derivative_SEPIA_dir, derivative_MRI_SYNTHSEG_dir)

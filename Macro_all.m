@@ -50,24 +50,29 @@ if ~isfolder(bids_dir)
 end
 if nargin < 2 || isempty(preprocessing)
     preprocessing = def_preprocessing;
+else
+    preprocessing = logical(str2double(preprocessing));
 end
-preprocessing = logical(str2double(preprocessing));
 if nargin < 3 || isempty(SepiaPrep)
     SepiaPrep = def_SepiaPrep;
+else
+    SepiaPrep = logical(str2double(SepiaPrep));
 end
-SepiaPrep = logical(str2double(SepiaPrep));
 if nargin < 4 || isempty(fittingMCR)
     fittingMCR = def_fittingMCR;
+else
+    fittingMCR = logical(str2double(fittingMCR));
 end
-fittingMCR = logical(str2double(fittingMCR));
 if nargin < 5 || isempty(fittingMCRGPU)
     fittingMCRGPU = def_fittingMCRGPU;
+else
+    fittingMCRGPU = logical(str2double(fittingMCRGPU));
 end
-fittingMCRGPU = logical(str2double(fittingMCRGPU));
 if nargin < 6 || isempty(writingMCR)
     writingMCR = def_writingMCR;
+else
+    writingMCR = logical(str2double(writingMCR));
 end
-writingMCR = logical(str2double(writingMCR));
 if nargin < 7 || isempty(acqname)
     acqname = def_acqname;
 end

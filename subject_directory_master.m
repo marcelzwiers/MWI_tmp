@@ -1,6 +1,5 @@
 %% major directories
 derivative_dir  = fullfile(bids_dir, 'derivatives');
-code_dir        = fullfile(bids_dir, 'code');
 
 %% bidscoiner dicm2niix output directories
 % bids_ses_dir        = fullfile(bids_dir, subj_label, sess_label);

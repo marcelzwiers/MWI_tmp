@@ -79,10 +79,11 @@ end
 if nargin < 8 || isempty(run_label)
     run_label = def_run_label;
 end
-if ~matches(run_label, 'run-\d+')
+if isempty(regexp(run_label, 'run-\d+', 'once'))
     warning('Run label %s does not match BIDS pattern "run-<number>"', run_label);
 end
 
+% TODO: Parse the protocol from the BIDS directory
 prot.rec  = ['acq-' acqname];
 prot.flip = [10 20 50 70];
 prot.echo = 1:12;
@@ -95,6 +96,21 @@ for count_flip = 1:length(prot.flip)
     prot.acq_str{count_flip}  = [prot.rec 'FA' num2str(prot.flip(count_flip))];
 end
 
+% Inform the user about the parameters
+fprintf('Running Macro_all with the following parameters:\n');
+fprintf('  bids_dir: %s\n', bids_dir);
+fprintf('  preprocessing: %d\n', preprocessing);
+fprintf('  SepiaPrep: %d\n', SepiaPrep);
+fprintf('  fittingMCR: %d\n', fittingMCR);
+fprintf('  fittingMCRGPU: %d\n', fittingMCRGPU);
+fprintf('  writingMCR: %d\n', writingMCR);
+fprintf('  acqname: %s\n', acqname);
+fprintf('  run_label: %s\n', run_label);
+fprintf('  protocol flip: %s\n', str(prot.flip));
+fprintf('  protocol echo: %s\n', str(prot.echo));
+
+% Set up the path
+code_dir = fileparts(mfilename('fullpath'));
 addpath(fullfile(code_dir,'sepia_1.2.2.5'));            % https://github.com/kschan0214/sepi
 addpath(code_dir);
 addpath(genpath(fullfile(code_dir,'despot1')));         % https://github.com/kschan0214/despot1
@@ -105,14 +121,15 @@ addpath(fullfile(code_dir,'qsub'));
 if fittingMCRGPU
     addpath(genpath(fullfile(code_dir,'gacelle')))      % /project/3055010.04/RunningProjects/AskAdam/gacelle/
 end
+sepia_addpath
 
-cd(bids_dir)
+% Process all subjects in the BIDS directory
 subjects = dir(fullfile(bids_dir, 'sub-*'));
 subjects = subjects([subjects.isdir]);                  % Make sure we have only folders
 for subjn = 1:length(subjects)
 
-    subject_directory_master
     subj_label = subjects(subjn).name;
+    subject_directory_master
     fprintf('--> Processing: %s (%d/%d)\n', subj_label, subjn, length(subjects));
 
     if preprocessing
@@ -120,7 +137,6 @@ for subjn = 1:length(subjects)
     end
 
     if SepiaPrep
-        sepia_addpath
         SEPIA_03_standard_pipeline(prot, subj_label, run_label, bids_ses_dir, derivative_FSL_dir, derivative_SEPIA_dir, derivative_MRI_SYNTHSEG_dir)
         script_SCR
     end

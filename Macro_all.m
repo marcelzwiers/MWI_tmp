@@ -85,16 +85,16 @@ end
 
 % Inform the user about the parameters
 fprintf('\nRunning Macro_all with the following parameters:\n');
-fprintf('  bids_dir:      %s\n', bids_dir);
+fprintf('       bids_dir: %s\n', bids_dir);
 fprintf('  preprocessing: %d\n', preprocessing);
-fprintf('  SepiaPrep:     %d\n', SepiaPrep);
-fprintf('  fittingMCR:    %d\n', fittingMCR);
+fprintf('      SepiaPrep: %d\n', SepiaPrep);
+fprintf('     fittingMCR: %d\n', fittingMCR);
 fprintf('  fittingMCRGPU: %d\n', fittingMCRGPU);
-fprintf('  writingMCR:    %d\n', writingMCR);
-fprintf('  acqname:       %s\n', acqname);
-fprintf('  run_label:     %s\n', run_label);
+fprintf('     writingMCR: %d\n', writingMCR);
+fprintf('        acqname: %s\n', acqname);
+fprintf('      run_label: %s\n', run_label);
 
-% Set up the path: TODO: Remove tinkering with paths, they are static in the compiled version
+% Set up the user path. TODO: Remove tinkering with paths, they are static in the compiled version
 Macro_all_path
 
 % Process all subjects in the BIDS directory
@@ -106,10 +106,10 @@ for subjn = 1:length(subjects)
     % Parse the flip angles and echos from the filename
     prot_files    = dir(fullfile(bids_dir, subjects(subjn).name, 'anat', ['*' prot.rec '*.nii.gz']));
     bf_array      = arrayfun(@(x) bids.File(x.name), prot_files');
-    echos         = str2double(arrayfun(@(x) x.entities.echo, bf_array, 'UniformOutput', false));
-    flips         = str2double(extractAfter(arrayfun(@(x) x.entities.acq, bf_array, 'UniformOutput', false), 'FA'));
-    prot.echo     = sort(unique(echos));
-    prot.flip     = sort(unique(flips));
+    echos         = arrayfun(@(x) x.entities.echo, bf_array, 'UniformOutput', false);
+    flips         = arrayfun(@(x) x.entities.acq, bf_array, 'UniformOutput', false);
+    prot.echo     = sort(unique(str2double(echos)));
+    prot.flip     = sort(unique(str2double(extractAfter(flips, 'FA'))));
     prot.echo_str = arrayfun(@(n) sprintf('echo-%d', n), 1:length(prot.echo), 'UniformOutput', false);
     prot.flip_str = arrayfun(@(fa) sprintf('FA%d', fa), prot.flip, 'UniformOutput', false);
     prot.acq_str  = cellfun(@(fa) [prot.rec fa], prot.flip_str, 'UniformOutput', false);

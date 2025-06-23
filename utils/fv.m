@@ -16,7 +16,7 @@ end
 if strcmp(computer,'GLNXA64')
     tempbase = '~/temp';
     % try to read the fslversion from FSL root directory
-    [~,fsldir] = unix('echo $FSLDIR');
+    [~,fsldir] = run_command('echo $FSLDIR');
     ind = strfind(fsldir,'/');
     fslversion = str2double(fsldir(ind(end)+5:end));
     fslMajorRelease = str2double(fsldir(ind(end)+1));
@@ -34,8 +34,8 @@ if strcmp(computer,'GLNXA64')
 end
 if ~isdir(tempbase),
    mkdir (tempbase);
-end;
-        unix(['rm ~/temp/temp* ']);
+end
+        run_command(['rm ~/temp/temp* '], true);
 
 tempFile = [tempbase '/temp_fslview'];
 tempFile_phs = [tempbase '/temp_fslview_phs'];
@@ -59,13 +59,13 @@ if (bSepVols)
 else
     if isreal(data)
         save_nii(make_nii(data,voxdims),[tempFile '.nii']);
-%         unix(['fslview ' tempFile ' &']);
-        unix([fslview ' ' tempFile ' &']);
+%         run_command(['fslview ' tempFile ' &']);
+        run_command([fslview ' ' tempFile ' &']);
     else
         save_nii(make_nii(abs(data),voxdims),tempFile);
         save_nii(make_nii(angle(data),voxdims),[tempFile_phs '.nii']);
-%         unix(['fslview ' tempFile_phs ' ' tempFile ' &']);
-        unix([fslview ' ' tempFile_phs ' ' tempFile ' &']);
+%         run_command(['fslview ' tempFile_phs ' ' tempFile ' &']);
+        run_command([fslview ' ' tempFile_phs ' ' tempFile ' &']);
         
     end
 end

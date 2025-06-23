@@ -43,9 +43,9 @@ for count_flip = 1:length(prot.flip)
 
     for count_echo = 1:length(prot.echo)
         % copies nifti and json phase
-        unix(['cp ' fullfile(bids_anat_dir, list_json{count_flip}(count_echo).name)  ' ' fullfile(Dataset{count_flip}.outdir, list_json{count_flip}(count_echo).name)]);
-        unix(['cp ' fullfile(bids_anat_dir, list_mag{count_flip}(count_echo).name)   ' ' fullfile(Dataset{count_flip}.outdir, list_mag{count_flip}(count_echo).name)]);
-        unix(['cp ' fullfile(bids_anat_dir, list_phase{count_flip}(count_echo).name) ' ' fullfile(Dataset{count_flip}.outdir, list_phase{count_flip}(count_echo).name)]);
+        run_command(['cp ' fullfile(bids_anat_dir, list_json{count_flip}(count_echo).name)  ' ' fullfile(Dataset{count_flip}.outdir, list_json{count_flip}(count_echo).name)], true);
+        run_command(['cp ' fullfile(bids_anat_dir, list_mag{count_flip}(count_echo).name)   ' ' fullfile(Dataset{count_flip}.outdir, list_mag{count_flip}(count_echo).name)], true);
+        run_command(['cp ' fullfile(bids_anat_dir, list_phase{count_flip}(count_echo).name) ' ' fullfile(Dataset{count_flip}.outdir, list_phase{count_flip}(count_echo).name)], true);
     end
     save_sepia_header(Dataset{count_flip}.outdir, [], fullfile(derivative_SEPIA_dir, gre_basename))
 end
@@ -102,7 +102,7 @@ for count_flip = 1:length(prot.flip)
     a = findstr(gre_basename, '.');
 
     S0_output = fullfile(Dataset{count_flip}.outdir, [gre_basename(1:(a(1)-1)) 'ProtocaolSpace.nii.gz']);
-    unix(['flirt -interp sinc -dof 6 -in ' S0 ' -ref ' RefProt ' -out ' S0_output ' -omat ' extension]);
+    run_command(['flirt -interp sinc -dof 6 -in ' S0 ' -ref ' RefProt ' -out ' S0_output ' -omat ' extension]);
 end
 
 RefProt       = S0_target{count_flip+1};
@@ -112,8 +112,9 @@ AnatB1_target = fullfile(derivative_FSL_dir, [subj_label '_acq-anat_' run_label 
 B1map_target  = fullfile(derivative_FSL_dir, [subj_label '_acq-famp_' run_label '_TB1TFLProtocolSpace.nii.gz']);
 extension     = fullfile(Dataset{count_flip+1}.outdir, 'TransformToProtocolSpace.mat');
 
-unix(['flirt -cost mutualinfo -in ' AnatB1 ' -ref ' RefProt ' -out ' AnatB1_target ' -omat ' extension]);
-unix(['flirt -in ' B1map ' -ref ' RefProt ' -applyxfm -init ' extension ' -out ' B1map_target]);
+% TODO: Fix "No image files match: ./sub-004/fmap/sub-004_acq-anat_run-1_TB1TFL"
+run_command(['flirt -cost mutualinfo -in ' AnatB1 ' -ref ' RefProt ' -out ' AnatB1_target ' -omat ' extension]);
+run_command(['flirt -in ' B1map ' -ref ' RefProt ' -applyxfm -init ' extension ' -out ' B1map_target]);
 
 
 %% Applies co-registration to all the separate datasets
@@ -164,8 +165,8 @@ for count_flip = 1:length(prot.flip)
         comand_mag   = [comand_mag   ' ' fullfile(derivative_FSL_dir, gre_mag)];
         comand_phase = [comand_phase ' ' fullfile(derivative_FSL_dir, gre_phase)];
     end
-    unix(comand_mag);
-    unix(comand_phase);
+    run_command(comand_mag);
+    run_command(comand_phase);
 end
 
 %% Get a brain mask for all datasets based on MRI syntseg
@@ -183,22 +184,19 @@ for count_flip = 1:length(prot.flip)
     gre_mask_sepia = [subj_label '_' prot.acq_str{count_flip} '_' run_label '_mask_MEGRE_space-withinGRE.nii.gz '];
 
     command = ['mri_synthseg --i ' fullfile(derivative_FSL_dir, gre) ' --o ' fullfile(derivative_MRI_SYNTHSEG_dir, gre_seg) ' --cpu --robust --resample ' fullfile(derivative_MRI_SYNTHSEG_dir, gre_mag)];
-    disp(['Running: ' command])
-    [sts, out] = unix(command);
-    if sts ~= 0
-        error(['Failed to execute: ' command '\nError %i: ' out], sts)
-    elseif ~isfile(strtrim(fullfile(derivative_MRI_SYNTHSEG_dir, gre_seg)))
+    run_command(command);
+    if ~isfile(strtrim(fullfile(derivative_MRI_SYNTHSEG_dir, gre_seg)))
         error(['No output file: ' fullfile(derivative_MRI_SYNTHSEG_dir, gre_seg)])
     end
 
     % From here onwards it is just to get the mask on the SEPIA folder
-    unix(['fslmaths ' fullfile(derivative_MRI_SYNTHSEG_dir, gre_seg) ' -bin ' fullfile(derivative_MRI_SYNTHSEG_dir, gre_mask)]);
+    run_command(['fslmaths ' fullfile(derivative_MRI_SYNTHSEG_dir, gre_seg) ' -bin ' fullfile(derivative_MRI_SYNTHSEG_dir, gre_mask)]);
 
     extension = fullfile(derivative_MRI_SYNTHSEG_dir, 'Transform');
-    unix(['flirt -in ' fullfile(derivative_MRI_SYNTHSEG_dir, gre_mag) ' -ref ' fullfile(derivative_FSL_dir, gre) ' -out ' fullfile(derivative_MRI_SYNTHSEG_dir, gre_mag_ori) ' -omat ' extension '.mat']);
-    unix(['flirt -interp nearestneighbour -in ' fullfile(derivative_MRI_SYNTHSEG_dir, gre_mask) ' -ref ' fullfile(derivative_FSL_dir, gre) ' -applyxfm -init ' extension '.mat -out ' fullfile(derivative_MRI_SYNTHSEG_dir, gre_mask_ori)]);
-    unix(['rm ' extension '.mat']);
-    unix(['cp ' fullfile(derivative_MRI_SYNTHSEG_dir, gre_mask_ori) fullfile(derivative_SEPIA_dir, gre_mask_sepia)]);
-    unix(['rm ' fullfile(derivative_MRI_SYNTHSEG_dir, gre_mag_ori)]);
-    unix(['rm ' fullfile(derivative_MRI_SYNTHSEG_dir, gre_mask_ori)]);
+    run_command(['flirt -in ' fullfile(derivative_MRI_SYNTHSEG_dir, gre_mag) ' -ref ' fullfile(derivative_FSL_dir, gre) ' -out ' fullfile(derivative_MRI_SYNTHSEG_dir, gre_mag_ori) ' -omat ' extension '.mat']);
+    run_command(['flirt -interp nearestneighbour -in ' fullfile(derivative_MRI_SYNTHSEG_dir, gre_mask) ' -ref ' fullfile(derivative_FSL_dir, gre) ' -applyxfm -init ' extension '.mat -out ' fullfile(derivative_MRI_SYNTHSEG_dir, gre_mask_ori)]);
+    run_command(['rm ' extension '.mat'], true);
+    run_command(['cp ' fullfile(derivative_MRI_SYNTHSEG_dir, gre_mask_ori) fullfile(derivative_SEPIA_dir, gre_mask_sepia)], true);
+    run_command(['rm ' fullfile(derivative_MRI_SYNTHSEG_dir, gre_mag_ori)], true);
+    run_command(['rm ' fullfile(derivative_MRI_SYNTHSEG_dir, gre_mask_ori)], true);
 end

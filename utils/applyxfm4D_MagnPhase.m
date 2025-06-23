@@ -40,11 +40,11 @@ save_nii_quick(complexdata, real(complexdata.img), RealData)
 save_nii_quick(complexdata, imag(complexdata.img), ImagData)
 
 if isfolder(input.MotionMat) 
-    unix([ 'applyxfm4D ' RealData ' ' input.RefVol ' ' RealDataMC ' ' input.MotionMat ' -interp sinc']);
-    unix([ 'applyxfm4D ' ImagData ' ' input.RefVol ' ' ImagDataMC ' ' input.MotionMat ' -interp sinc']);
+    run_command([ 'applyxfm4D ' RealData ' ' input.RefVol ' ' RealDataMC ' ' input.MotionMat ' -interp sinc']);
+    run_command([ 'applyxfm4D ' ImagData ' ' input.RefVol ' ' ImagDataMC ' ' input.MotionMat ' -interp sinc']);
 else
-    unix(['flirt -in ' RealData ' -ref ' input.RefVol ' -out ' RealDataMC ' -applyxfm -init ' input.MotionMat ' -interp sinc']);
-    unix(['flirt -in ' ImagData ' -ref ' input.RefVol ' -out ' ImagDataMC ' -applyxfm -init ' input.MotionMat ' -interp sinc']);
+    run_command(['flirt -in ' RealData ' -ref ' input.RefVol ' -out ' RealDataMC ' -applyxfm -init ' input.MotionMat ' -interp sinc']);
+    run_command(['flirt -in ' ImagData ' -ref ' input.RefVol ' -out ' ImagDataMC ' -applyxfm -init ' input.MotionMat ' -interp sinc']);
 end
 
 realdata        = load_untouch_nii(RealDataMC);
@@ -82,9 +82,9 @@ save_nii_quick(complexdata, angle(complexdata.img), PhaseDataMC);
 % 
 % end;
 
-unix(['rm ', RealData])
-unix(['rm ', ImagData])
-unix(['rm ', RealDataMC])
-unix(['rm ', ImagDataMC])
+run_command(['rm ', RealData], true)
+run_command(['rm ', ImagData], true)
+run_command(['rm ', RealDataMC], true)
+run_command(['rm ', ImagDataMC], true)
 
 res = 1;

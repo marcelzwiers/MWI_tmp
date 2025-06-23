@@ -1,4 +1,4 @@
-function res = applyxfm4D_MagnPhase(input);
+function res = applyxfm4D_MagnPhase(input)
 
 
 % input.MagName - should have _mag in the end of the name, prior to .nii
@@ -17,43 +17,42 @@ function res = applyxfm4D_MagnPhase(input);
 %         PhaseDataMC = [Dataset{count}.outdir ,'Data_',Dataset{count}.echo{count_echo},'_phase_mcf.nii.gz'];
 
 debugmode = 0;
-MagnData = input.MagName;
+MagnData  = input.MagName;
 PhaseData = input.PhaseName;
 
-StartMagString = findstr(MagnData,'-mag');
+StartMagString   = findstr(MagnData,'-mag');
 StartPhaseString = findstr(PhaseData,'-phase');
 
-RealData = [MagnData(1:StartMagString-1),'-real.nii.gz'];
-ImagData = [MagnData(1:StartMagString-1),'-imag.nii.gz'];
-RealDataMC = [MagnData(1:StartMagString-1),'-real_mcf.nii.gz'];
-ImagDataMC = [MagnData(1:StartMagString-1),'-imag_mcf.nii.gz'];
+RealData   = [MagnData(1:StartMagString-1) '-real.nii.gz'];
+ImagData   = [MagnData(1:StartMagString-1) '-imag.nii.gz'];
+RealDataMC = [MagnData(1:StartMagString-1) '-real_mcf.nii.gz'];
+ImagDataMC = [MagnData(1:StartMagString-1) '-imag_mcf.nii.gz'];
 
-if and(isfield(input,'MagNameOutput'),isfield(input,'PhaseNameOutput'))
-    MagDataMC = input.MagNameOutput;
+if and(isfield(input,'MagNameOutput'), isfield(input,'PhaseNameOutput'))
+    MagDataMC   = input.MagNameOutput;
     PhaseDataMC = input.PhaseNameOutput;
 else
-    MagDataMC = [MagnData(1:StartMagString-1),'-mag_mcf.nii.gz'];
-    PhaseDataMC = [PhaseData(1:StartPhaseString-1),'-phase_mcf.nii.gz'];
+    MagDataMC   = [MagnData(1:StartMagString-1) '-mag_mcf.nii.gz'];
+    PhaseDataMC = [PhaseData(1:StartPhaseString-1) '-phase_mcf.nii.gz'];
 end
-complexdata = loadcomplex_nii( MagnData , PhaseData );
-save_nii_quick(complexdata, real(complexdata.img) , RealData)
-save_nii_quick(complexdata, imag(complexdata.img) , ImagData)
+complexdata = loadcomplex_nii( MagnData, PhaseData );
+save_nii_quick(complexdata, real(complexdata.img), RealData)
+save_nii_quick(complexdata, imag(complexdata.img), ImagData)
 
 if isfolder(input.MotionMat) 
-    unix([ 'applyxfm4D ',RealData, ' ',input.RefVol,' ', RealDataMC, ' ',input.MotionMat,' -interp sinc'] );
-    unix([ 'applyxfm4D ',ImagData, ' ',input.RefVol,' ', ImagDataMC, ' ',input.MotionMat,' -interp sinc'] );
+    unix([ 'applyxfm4D ' RealData ' ' input.RefVol ' ' RealDataMC ' ' input.MotionMat ' -interp sinc']);
+    unix([ 'applyxfm4D ' ImagData ' ' input.RefVol ' ' ImagDataMC ' ' input.MotionMat ' -interp sinc']);
 else
-    unix([ 'flirt -in ',RealData, ' -ref ',input.RefVol,' -out ', RealDataMC, ' -applyxfm -init ',input.MotionMat,' -interp sinc'] );
-    unix([ 'flirt -in ',ImagData, ' -ref ',input.RefVol,' -out ', ImagDataMC, ' -applyxfm -init ',input.MotionMat,' -interp sinc'] );
+    unix(['flirt -in ' RealData ' -ref ' input.RefVol ' -out ' RealDataMC ' -applyxfm -init ' input.MotionMat ' -interp sinc']);
+    unix(['flirt -in ' ImagData ' -ref ' input.RefVol ' -out ' ImagDataMC ' -applyxfm -init ' input.MotionMat ' -interp sinc']);
 end
 
-realdata = load_untouch_nii( RealDataMC );
-imagdata = load_untouch_nii( ImagDataMC );
-complexdata = realdata;
-complexdata.img = (single(realdata.img) + i * single(imagdata.img));
-save_nii_quick(complexdata, abs(complexdata.img) , MagDataMC);
-save_nii_quick(complexdata, angle(complexdata.img) , PhaseDataMC);
-
+realdata        = load_untouch_nii(RealDataMC);
+imagdata        = load_untouch_nii(ImagDataMC);
+complexdata     = realdata;
+complexdata.img = (single(realdata.img) + 1i * single(imagdata.img));
+save_nii_quick(complexdata, abs(complexdata.img), MagDataMC);
+save_nii_quick(complexdata, angle(complexdata.img), PhaseDataMC);
 
 % if debugmode
 %     figure(1)
@@ -82,10 +81,10 @@ save_nii_quick(complexdata, angle(complexdata.img) , PhaseDataMC);
 %     Orthoview(magdata.img(:,:,:,1)); colorbar; title('mag post saving')
 % 
 % end;
-% 
-unix(['rm ',RealData])
-unix(['rm ',ImagData])
-unix(['rm ',RealDataMC])
-unix(['rm ',ImagDataMC])
+
+unix(['rm ', RealData])
+unix(['rm ', ImagData])
+unix(['rm ', RealDataMC])
+unix(['rm ', ImagDataMC])
 
 res = 1;

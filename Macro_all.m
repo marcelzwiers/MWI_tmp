@@ -41,7 +41,7 @@ if nargin == 1 && ischar(bids_dir) && (strcmpi(bids_dir, '--help') || strcmpi(bi
     return
 end
 
-% Handle input arguments
+% Handle input arguments (argument blocks are not supported in compiled version)
 if nargin < 1 || isempty(bids_dir)
     bids_dir = def_bids_dir;
 end
@@ -98,18 +98,18 @@ end
 
 % Inform the user about the parameters
 fprintf('Running Macro_all with the following parameters:\n');
-fprintf('  bids_dir: %s\n', bids_dir);
+fprintf('  bids_dir:      %s\n', bids_dir);
 fprintf('  preprocessing: %d\n', preprocessing);
-fprintf('  SepiaPrep: %d\n', SepiaPrep);
-fprintf('  fittingMCR: %d\n', fittingMCR);
+fprintf('  SepiaPrep:     %d\n', SepiaPrep);
+fprintf('  fittingMCR:    %d\n', fittingMCR);
 fprintf('  fittingMCRGPU: %d\n', fittingMCRGPU);
-fprintf('  writingMCR: %d\n', writingMCR);
-fprintf('  acqname: %s\n', acqname);
-fprintf('  run_label: %s\n', run_label);
-fprintf('  protocol flip: %s\n', num2str(prot.flip));
-fprintf('  protocol echo: %s\n', num2str(prot.echo));
+fprintf('  writingMCR:    %d\n', writingMCR);
+fprintf('  acqname:       %s\n', acqname);
+fprintf('  run_label:     %s\n', run_label);
+fprintf('  flip angles:   %s\n', num2str(prot.flip));
+fprintf('  echo numbers:  %s\n', num2str(prot.echo));
 
-% Set up the path
+% Set up the path: TODO: Remove tinkering with paths, they are static in the compiled version
 code_dir = fileparts(mfilename('fullpath'));
 addpath(fullfile(code_dir,'sepia_1.2.2.5'));            % https://github.com/kschan0214/sepi
 addpath(code_dir);
@@ -178,7 +178,7 @@ for subjn = 1:length(subjects)
         func_MCR_AfterCoregistration_qsubfeval_submitread(input, output, task)
 
         input.Configfile           = 'ConfigDiscardFirstEcho.m';
-        output.acq_str             = [prot.rec,'Echo1corrupted'];
+        output.acq_str             = [prot.rec 'Echo1corrupted'];
         output.MPPCAdenoise        = 0;
         func_MCR_AfterCoregistration_qsubfeval_submitread(input, output, task)
 
@@ -186,12 +186,12 @@ for subjn = 1:length(subjects)
     if fittingMCRGPU
         jobmaxtime             = 4 * 60^2; % 60 minutes
         input.Configfile       = 'ConfigGPU.m';
-        output.acq_str         = [prot.rec,'GPU'];
+        output.acq_str         = [prot.rec 'GPU'];
         output.MPPCAdenoise    = 0;
         if canUseGPU
             func_MCR_AfterCoregistration_gpu(input,output);
         else
-            qsubfeval('func_MCR_AfterCoregistration_gpu', input,output,  'memreq',12*1024^3, 'timreq',jobmaxtime , 'options','--partition=gpu --gpus=nvidia_rtx_a6000:1');
+            qsubfeval('func_MCR_AfterCoregistration_gpu', input,output, 'memreq',12*1024^3, 'timreq',jobmaxtime , 'options','--partition=gpu --gpus=nvidia_rtx_a6000:1');
         end
     end
 

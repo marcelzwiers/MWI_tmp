@@ -6,7 +6,7 @@ function Macro_all(bids_dir, preprocessing, SepiaPrep, fittingMCR, fittingMCRGPU
 %   Macro_all(bids_dir, preprocessing, SepiaPrep, fittingMCR, writingMCR, fittingMCRGPU, acqname, run)
 %
 % Inputs:
-%   bids_dir      - Path to BIDS directory (default: "/project/3055010.04/RunningProjects/MyelinWaterImaging/bidsSiemensVariantsNew")
+%   bids_dir      - Path to BIDS directory (default: '/project/3055010.04/RunningProjects/MyelinWaterImaging/bidsSiemensVariantsNew')
 %   preprocessing - Run preprocessing (0/1, default: 1)
 %   SepiaPrep     - Advanced SEPIA preparation (0/1, default: 1)
 %   fittingMCR    - CPU-based fitting (0/1, default: 1)
@@ -16,7 +16,7 @@ function Macro_all(bids_dir, preprocessing, SepiaPrep, fittingMCR, fittingMCRGPU
 %   run           - Run label (default: {'run-1'})
 
 % Set default values
-def_bids_dir      = "/project/3055010.04/RunningProjects/MyelinWaterImaging/bidsSiemensVariantsNew";
+def_bids_dir      = '/project/3055010.04/RunningProjects/MyelinWaterImaging/bidsSiemensVariantsNew';
 def_acqname       = 'fl3d';
 def_run_label     = 'run-1';
 def_preprocessing = 1;
@@ -83,19 +83,6 @@ if isempty(regexp(run_label, 'run-\d+', 'once'))
     warning('Run label %s does not match BIDS pattern "run-<number>"', run_label);
 end
 
-% TODO: Parse the protocol from the BIDS directory
-prot.rec  = ['acq-' acqname];
-prot.flip = [10 20 50 70];
-prot.echo = 1:12;
-for count_echo = 1:length(prot.echo)
-    prot.echo_str{count_echo} = ['echo-' num2str(count_echo)];
-end
-for count_flip = 1:length(prot.flip)
-    acq_label{count_flip}     = [prot.rec 'FA' num2str(prot.flip(count_flip))];
-    prot.flip_str{count_flip} = ['FA' num2str(prot.flip(count_flip))];
-    prot.acq_str{count_flip}  = [prot.rec 'FA' num2str(prot.flip(count_flip))];
-end
-
 % Inform the user about the parameters
 fprintf('\nRunning Macro_all with the following parameters:\n');
 fprintf('  bids_dir:      %s\n', bids_dir);
@@ -106,20 +93,31 @@ fprintf('  fittingMCRGPU: %d\n', fittingMCRGPU);
 fprintf('  writingMCR:    %d\n', writingMCR);
 fprintf('  acqname:       %s\n', acqname);
 fprintf('  run_label:     %s\n', run_label);
-fprintf('  flip angles:   %s\n', num2str(prot.flip));
-fprintf('  echo numbers:  %s\n', num2str(prot.echo));
 
 % Set up the path: TODO: Remove tinkering with paths, they are static in the compiled version
 Macro_all_path
 
 % Process all subjects in the BIDS directory
 subjects = dir(fullfile(bids_dir, 'sub-*'));
-subjects = subjects([subjects.isdir]);                  % Make sure we have only folders
+subjects = subjects([subjects.isdir]);      % Make sure we have only folders
+prot.rec = ['acq-' acqname];                % Protocol name, e.g., 'acq-fl3d'. TODO: Parse the protocol from the BIDS directory
 for subjn = 1:length(subjects)
+
+    % Parse the flip angles and echos from the filename
+    prot_files    = dir(fullfile(bids_dir, subjects(subjn).name, 'anat', ['*' prot.rec '*.nii.gz']));
+    bf_array      = arrayfun(@(x) bids.File(x.name), prot_files');
+    echos         = str2double(arrayfun(@(x) x.entities.echo, bf_array, 'UniformOutput', false));
+    flips         = str2double(extractAfter(arrayfun(@(x) x.entities.acq, bf_array, 'UniformOutput', false), 'FA'));
+    prot.echo     = sort(unique(echos));
+    prot.flip     = sort(unique(flips));
+    prot.echo_str = arrayfun(@(n) sprintf('echo-%d', n), 1:length(prot.echo), 'UniformOutput', false);
+    prot.flip_str = arrayfun(@(fa) sprintf('FA%d', fa), prot.flip, 'UniformOutput', false);
+    prot.acq_str  = cellfun(@(fa) [prot.rec fa], prot.flip_str, 'UniformOutput', false);
 
     subj_label = subjects(subjn).name;
     subject_directory_master
     fprintf('\n--> Processing: %s (%d/%d)\n', subj_label, subjn, length(subjects));
+    disp(prot)
 
     if preprocessing
         ProcessingPipelineModular(prot, subj_label, run_label, bids_ses_dir, derivative_FSL_dir, derivative_SEPIA_dir, derivative_MRI_SYNTHSEG_dir)
@@ -165,26 +163,26 @@ for subjn = 1:length(subjects)
             task.Read_JobResults      = 1; % only do this if enough slices have successfully been processed
         end
 
-        output.MPPCAdenoise        = 0;
+        output.MPPCAdenoise = 0;
         func_MCR_AfterCoregistration_qsubfeval_submitread(input, output, task)
-        output.MPPCAdenoise        = 1;
+        output.MPPCAdenoise = 1;
         func_MCR_AfterCoregistration_qsubfeval_submitread(input, output, task)
 
-        input.Configfile           = 'ConfigDiscardFirstEcho.m';
-        output.acq_str             = [prot.rec 'Echo1corrupted'];
-        output.MPPCAdenoise        = 0;
+        input.Configfile    = 'ConfigDiscardFirstEcho.m';
+        output.acq_str      = [prot.rec 'Echo1corrupted'];
+        output.MPPCAdenoise = 0;
         func_MCR_AfterCoregistration_qsubfeval_submitread(input, output, task)
 
     end
     if fittingMCRGPU
-        jobmaxtime             = 4 * 60^2; % 60 minutes
-        input.Configfile       = 'ConfigGPU.m';
-        output.acq_str         = [prot.rec 'GPU'];
-        output.MPPCAdenoise    = 0;
+        jobmaxtime          = 4 * 60^2; % 60 minutes
+        input.Configfile    = 'ConfigGPU.m';
+        output.acq_str      = [prot.rec 'GPU'];
+        output.MPPCAdenoise = 0;
         if canUseGPU
-            func_MCR_AfterCoregistration_gpu(input,output);
+            func_MCR_AfterCoregistration_gpu(input, output);
         else
-            qsubfeval('func_MCR_AfterCoregistration_gpu', input,output, 'memreq',12*1024^3, 'timreq',jobmaxtime , 'options','--partition=gpu --gpus=nvidia_rtx_a6000:1');
+            qsubfeval('func_MCR_AfterCoregistration_gpu', input, output, 'memreq',12*1024^3, 'timreq',jobmaxtime , 'options','--partition=gpu --gpus=nvidia_rtx_a6000:1');
         end
     end
 
@@ -207,8 +205,8 @@ originalPaths = strsplit(path, pathsep);
 
 % Add the userpaths
 code_dir = fileparts(mfilename('fullpath'));
-addpath(fullfile(code_dir,'sepia_1.2.2.5'));            % https://github.com/kschan0214/sepi
 addpath(code_dir);
+addpath(fullfile(code_dir,'sepia_1.2.2.5'));            % https://github.com/kschan0214/sepi
 addpath(genpath(fullfile(code_dir,'despot1')));         % https://github.com/kschan0214/despot1
 addpath(genpath(fullfile(code_dir,'EPG-X'))); 	        % KCL extended phase graphs
 addpath(genpath(fullfile(code_dir,'utils')));

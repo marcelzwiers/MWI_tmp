@@ -27,12 +27,12 @@ algorParam.qsm.solver = 'Iterative Tikhonov';
 algorParam.qsm.lambda = 0.05;
 algorParam.qsm.tolerance = 0.03;
 
-for flip = 1:length(prot{1}.flip)
+for flip = 1:length(prot.flip)
 
-    seq_SEPIA_dir = fullfile(derivative_SEPIA_dir,prot{1}.acq_str{flip});
+    seq_SEPIA_dir = fullfile(derivative_SEPIA_dir,prot.acq_str{flip});
     mkdir(seq_SEPIA_dir)
     % general GRE basename
-    gre_basename    = [subj_label '_' prot{count_prot}.acq_str{flip} '_' run_label];
+    gre_basename    = [subj_label '_' prot.acq_str{flip} '_' run_label];
 
     % magnitude nifti image filename
     phase_fn        = [gre_basename '_part-phase_MEGRE_space-withinGRE.nii.gz'];
@@ -63,9 +63,9 @@ algorParamR2star.general.isRefineBrainMask = 0;
 algorParamR2star.r2s.method = 'Trapezoidal';
 algorParamR2star.r2s.s0mode = '1st echo';
 
-for flip = 1:length(prot{1}.flip)
-    seq_SEPIA_dir   = fullfile(derivative_SEPIA_dir,prot{1}.acq_str{flip});
-    gre_basename    = [subj_label '_' prot{count_prot}.acq_str{flip} '_' run_label];
+for flip = 1:length(prot.flip)
+    seq_SEPIA_dir   = fullfile(derivative_SEPIA_dir,prot.acq_str{flip});
+    gre_basename    = [subj_label '_' prot.acq_str{flip} '_' run_label];
     magn_fn         = [gre_basename '_part-mag_MEGRE_space-withinGRE.nii.gz'];
     mask_fn         = [gre_basename '_mask_MEGRE_space-withinGRE.nii.gz'];
     sepia_header_fn = [gre_basename '_header.mat'];

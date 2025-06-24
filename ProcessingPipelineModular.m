@@ -149,7 +149,7 @@ for count_flip = 1:length(prot.flip)
     end
 end
 
-res = qsubcellfun(@applyxfm4D_MagnPhase, input, 'memreq', 3 * 1024^3, 'timreq', 600);
+res = qsubcellfun(@applyxfm4D_MagnPhase, input, 'memreq', 3*1024^3, 'timreq', 10*60, 'stack', 5);
 
 
 %% Create a SEPIA folder with 4D data and a header file
@@ -178,13 +178,26 @@ for count_flip = 1:length(prot.flip)
     gre            = [gre_basename 'mag_MEGREProtocolSpace.nii.gz '];
     gre_mag        = [gre_basename 'mag_MEGREProtocolSpace_1mm.nii.gz '];
     gre_seg        = [gre_basename 'mag_MEGREProtocolSpace_1mmseg.nii.gz '];
+    command{count_flip} = ['mri_synthseg --i ' fullfile(derivative_FSL_dir, gre) ' --o ' fullfile(derivative_MRI_SYNTHSEG_dir, gre_seg) ' --cpu --robust --resample ' fullfile(derivative_MRI_SYNTHSEG_dir, gre_mag)];
+end
+fprintf(['$ ' command{1} '\n$ [...])\n']);
+[status, output] = qsubcellfun(@run_command, command, 'memreq', 15*1024^3, 'timreq', 20*60);
+
+for count_flip = 1:length(prot.flip)
+    gre_basename   = [subj_label '_' prot.acq_str{count_flip} '_' run_label '_echo-1_part-'];
+    gre            = [gre_basename 'mag_MEGREProtocolSpace.nii.gz '];
+    gre_mag        = [gre_basename 'mag_MEGREProtocolSpace_1mm.nii.gz '];
+    gre_seg        = [gre_basename 'mag_MEGREProtocolSpace_1mmseg.nii.gz '];
     gre_mask       = [gre_basename 'mag_MEGREProtocolSpace_1mmmask.nii.gz '];
     gre_mag_ori    = [gre_basename 'mag_MEGREProtocolSpace_OriginalResampled.nii.gz '];
     gre_mask_ori   = [gre_basename 'mag_MEGREProtocolSpace_mask.nii.gz '];
     gre_mask_sepia = [subj_label '_' prot.acq_str{count_flip} '_' run_label '_mask_MEGRE_space-withinGRE.nii.gz '];
-
-    command = ['mri_synthseg --i ' fullfile(derivative_FSL_dir, gre) ' --o ' fullfile(derivative_MRI_SYNTHSEG_dir, gre_seg) ' --cpu --robust --resample ' fullfile(derivative_MRI_SYNTHSEG_dir, gre_mag)];
-    run_command(command);
+    % Check for errors
+    if status{count_flip} ~= 0
+        error('Command failed with status %d\nCommand:\n%s\nOutput:\n%s', status{count_flip}, command{count_flip}, output{count_flip});
+    elseif ~isempty(output{count_flip})
+        fprintf('%s\n', output{count_flip});
+    end
     if ~isfile(strtrim(fullfile(derivative_MRI_SYNTHSEG_dir, gre_seg)))
         error(['No output file: ' fullfile(derivative_MRI_SYNTHSEG_dir, gre_seg)])
     end

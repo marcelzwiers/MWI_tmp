@@ -95,7 +95,7 @@ fprintf('        acqname: %s\n', acqname);
 fprintf('      run_label: %s\n', run_label);
 
 % Set up the user path. TODO: Remove tinkering with paths, they are static in the compiled version
-Macro_all_path
+code_dir = Macro_all_path;
 
 % Process all subjects in the BIDS directory
 subjects = dir(fullfile(bids_dir, 'sub-*'));
@@ -115,7 +115,7 @@ for subjn = 1:length(subjects)
     prot.acq_str  = cellfun(@(fa) [prot.rec fa], prot.flip_str, 'UniformOutput', false);
 
     subj_label = subjects(subjn).name;
-    subject_directory_master
+    subject_directory_master            % Puts foldernames in the worksapce, derived from bids_dir and subj_label
     fprintf('\n--> Processing: %s (%d/%d)\n', subj_label, subjn, length(subjects));
     disp(prot)
 
@@ -124,6 +124,9 @@ for subjn = 1:length(subjects)
     end
 
     if SepiaPrep
+        if ~isdeployed
+            sepia_addpath
+        end
         SEPIA_03_standard_pipeline
         script_SCR
     end
@@ -190,8 +193,9 @@ end
 disp("Finished processing")
 
 
-function Macro_all_path
+function code_dir = Macro_all_path
 % Set and saves the matlab userpath for the compiled version of Macro_all.m
+% Returns the code directory where Macro_all.m is located
 
 if isdeployed
     return

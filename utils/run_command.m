@@ -21,7 +21,7 @@ if nargin < 2
 end
 
 if ~silent
-    fprintf('\n>> Running system command:\n%s\n', command);
+    fprintf('$ %s\n', command);
 end
 
 [status, output] = system(command);

@@ -28,7 +28,6 @@ algorParam.qsm.lambda = 0.05;
 algorParam.qsm.tolerance = 0.03;
 
 for flip = 1:length(prot.flip)
-
     seq_SEPIA_dir = fullfile(derivative_SEPIA_dir,prot.acq_str{flip});
     mkdir(seq_SEPIA_dir)
     % general GRE basename
@@ -42,17 +41,15 @@ for flip = 1:length(prot.flip)
     output_prefix   = [gre_basename '_MEGRE_space-withinGRE'];
 
     % Input/Output filenames
-    clear input
-    input(1).name   = fullfile(derivative_SEPIA_dir, phase_fn);
-    input(2).name   = fullfile(derivative_SEPIA_dir, magn_fn);
-    input(3).name   = '';
-    input(4).name   = fullfile(derivative_SEPIA_dir, sepia_header_fn);
-    output_basename = fullfile(seq_SEPIA_dir, output_prefix);
-    mask_filename   = fullfile(derivative_SEPIA_dir, mask_fn);
-
-    sepiaIO(input, output_basename, mask_filename, algorParam);
-
+    clear input output_basename mask_filename
+    input{flip}(1).name   = fullfile(derivative_SEPIA_dir, phase_fn);
+    input{flip}(2).name   = fullfile(derivative_SEPIA_dir, magn_fn);
+    input{flip}(3).name   = '';
+    input{flip}(4).name   = fullfile(derivative_SEPIA_dir, sepia_header_fn);
+    output_basename{flip} = fullfile(seq_SEPIA_dir, output_prefix);
+    mask_filename{flip}   = fullfile(derivative_SEPIA_dir, mask_fn);
 end
+qsubcellfun(@sepiaIO, input, output_basename, mask_filename, repmat({algorParam},size(input)), 'memreq', 4*1024^3, 'timreq', 60*60)
 
 algorParamR2star = struct();
 algorParamR2star.general.isBET = 0;
@@ -72,12 +69,11 @@ for flip = 1:length(prot.flip)
     output_prefix   = [gre_basename '_MEGRE_space-withinGRE'];
 
     clear input
-    input(1).name   = fullfile(derivative_SEPIA_dir, magn_fn);
-    input(2).name   = fullfile(derivative_SEPIA_dir, magn_fn);
-    input(3).name   = '';
-    input(4).name   = fullfile(derivative_SEPIA_dir, sepia_header_fn);
-    output_basename = fullfile(seq_SEPIA_dir, output_prefix);
-    mask_filename   = fullfile(derivative_SEPIA_dir, mask_fn);
-
-    sepiaIO(input, output_basename, mask_filename, algorParamR2star);
+    input{flip}(1).name   = fullfile(derivative_SEPIA_dir, magn_fn);
+    input{flip}(2).name   = fullfile(derivative_SEPIA_dir, magn_fn);
+    input{flip}(3).name   = '';
+    input{flip}(4).name   = fullfile(derivative_SEPIA_dir, sepia_header_fn);
+    output_basename{flip} = fullfile(seq_SEPIA_dir, output_prefix);
+    mask_filename{flip}   = fullfile(derivative_SEPIA_dir, mask_fn);
 end
+qsubcellfun(@sepiaIO, input, output_basename, mask_filename, repmat({algorParamR2star},size(input)), 'memreq', 4*1024^3, 'timreq', 60*60)

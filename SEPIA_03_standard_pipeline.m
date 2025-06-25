@@ -49,7 +49,11 @@ for flip = 1:length(prot.flip)
     output_basename{flip} = fullfile(seq_SEPIA_dir, output_prefix);
     mask_filename{flip}   = fullfile(derivative_SEPIA_dir, mask_fn);
 end
-qsubcellfun(@sepiaIO, input, output_basename, mask_filename, repmat({algorParam},size(input)), 'memreq', 4*1024^3, 'timreq', 60*60)
+if ~isdeployed
+    qsubcellfun(@sepiaIO, input, output_basename, mask_filename, repmat({algorParam},size(input)), 'memreq', 4*1024^3, 'timreq', 60*60)
+else
+    cellfun(@sepiaIO, input, output_basename, mask_filename, repmat({algorParam},size(input)), 'UniformOutput', false)
+end
 
 algorParamR2star = struct();
 algorParamR2star.general.isBET = 0;
@@ -76,4 +80,8 @@ for flip = 1:length(prot.flip)
     output_basename{flip} = fullfile(seq_SEPIA_dir, output_prefix);
     mask_filename{flip}   = fullfile(derivative_SEPIA_dir, mask_fn);
 end
-qsubcellfun(@sepiaIO, input, output_basename, mask_filename, repmat({algorParamR2star},size(input)), 'memreq', 4*1024^3, 'timreq', 60*60)
+if ~isdeployed
+    qsubcellfun(@sepiaIO, input, output_basename, mask_filename, repmat({algorParamR2star},size(input)), 'memreq', 4*1024^3, 'timreq', 60*60)
+else
+    cellfun(@sepiaIO, input, output_basename, mask_filename, repmat({algorParamR2star},size(input)), 'UniformOutput', false)
+end

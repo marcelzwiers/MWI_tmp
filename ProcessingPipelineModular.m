@@ -149,8 +149,11 @@ for count_flip = 1:length(prot.flip)
     end
 end
 
-res = qsubcellfun(@applyxfm4D_MagnPhase, input, 'memreq', 3*1024^3, 'timreq', 10*60, 'stack', 5);
-
+if ~isdeployed
+    res = qsubcellfun(@applyxfm4D_MagnPhase, input, 'memreq', 3*1024^3, 'timreq', 10*60, 'stack', 5, 'backend', backend);
+else
+    res = cellfun(@applyxfm4D_MagnPhase, input, 'UniformOutput', false);
+end
 
 %% Create a SEPIA folder with 4D data and a header file
 for count_flip = 1:length(prot.flip)
@@ -180,8 +183,12 @@ for count_flip = 1:length(prot.flip)
     gre_seg        = [gre_basename 'mag_MEGREProtocolSpace_1mmseg.nii.gz '];
     command{count_flip} = ['mri_synthseg --i ' fullfile(derivative_FSL_dir, gre) ' --o ' fullfile(derivative_MRI_SYNTHSEG_dir, gre_seg) ' --cpu --robust --resample ' fullfile(derivative_MRI_SYNTHSEG_dir, gre_mag)];
 end
-fprintf(['$ ' command{1} '\n$ [...])\n']);
-[status, output] = qsubcellfun(@run_command, command, 'memreq', 15*1024^3, 'timreq', 20*60);
+fprintf('$ %s\n$ [..] %d times more\n', command{1}, length(command) - 1);
+if ~isdeployed
+    [status, output] = qsubcellfun(@run_command, command, 'memreq', 15*1024^3, 'timreq', 20*60);
+else
+    [status, output] = cellfun(@run_command, command, 'UniformOutput', false);
+end
 
 for count_flip = 1:length(prot.flip)
     gre_basename   = [subj_label '_' prot.acq_str{count_flip} '_' run_label '_echo-1_part-'];

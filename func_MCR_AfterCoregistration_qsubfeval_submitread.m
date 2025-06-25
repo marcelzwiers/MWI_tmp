@@ -212,7 +212,11 @@ end
 
 if task.Submit_Job
     for slice = 1:dims(3)
-        jobid{slice}  = qsubfeval('mwi_3cx_2R1R2s_dimwi',algoParamCell{slice},imgParamCell{slice},'memreq' , 1e10 , 'timreq' , 6*3600);
+        if ~isdeployed
+            jobid{slice} = qsubfeval(@mwi_3cx_2R1R2s_dimwi, algoParamCell{slice}, imgParamCell{slice}, 'memreq' , 1e10, 'timreq', 6*3600);
+        else
+            jobid{slice} = mwi_3cx_2R1R2s_dimwi(algoParamCell{slice}, imgParamCell{slice});
+        end
     end
 end
 
@@ -220,8 +224,12 @@ if task.ReSubmit_MissingJobs
     for slice =1:dims(3)
         a = dir(fullfile(imgParamCell{slice}.output_dir,[imgParamCell{slice}.output_filename,'.mat'])) ;
         if isempty(a)
-            display(['Slice ', num2str(slice),' was not present: Resubmitting job'])
-            jobid{slice} = qsubfeval('mwi_3cx_2R1R2s_dimwi',algoParamCell{slice},imgParamCell{slice},'memreq' , 1e10 , 'timreq' , 6*3600);
+            disp(['Slice ' num2str(slice) ' was not present: Resubmitting job'])
+            if ~isdeployed
+                jobid{slice} = qsubfeval(@mwi_3cx_2R1R2s_dimwi, algoParamCell{slice}, imgParamCell{slice}, 'memreq', 1e10 , 'timreq', 6*3600);
+            else
+                jobid{slice} = mwi_3cx_2R1R2s_dimwi(algoParamCell{slice}, imgParamCell{slice});
+            end
         end
     end
 end

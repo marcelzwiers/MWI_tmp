@@ -36,8 +36,8 @@ else
     PhaseDataMC = [PhaseData(1:StartPhaseString-1) '-phase_mcf.nii.gz'];
 end
 complexdata = loadcomplex_nii( MagnData, PhaseData );
-save_nii_quick(complexdata, real(complexdata.img), RealData)
-save_nii_quick(complexdata, imag(complexdata.img), ImagData)
+save_nii_quick(complexdata, real(complexdata.img), RealData);
+save_nii_quick(complexdata, imag(complexdata.img), ImagData);
 
 if isfolder(input.MotionMat) 
     run_command([ 'applyxfm4D ' RealData ' ' input.RefVol ' ' RealDataMC ' ' input.MotionMat ' -interp sinc']);

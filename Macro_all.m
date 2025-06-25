@@ -1,22 +1,26 @@
-function Macro_all(bids_dir, preprocessing, SepiaPrep, fittingMCR, fittingMCRGPU, writingMCR, acqname, run_label)
+function Macro_all(bids_dir, preprocessing, SepiaPrep, fittingMCR, fittingMCRGPU, writingMCR, acqname, run_label, varargin)
 % Process a BIDS directory for Myelin Water Imaging
 %
 % Usage:
 %   Macro_all()     % uses all defaults
-%   Macro_all(bids_dir, preprocessing, SepiaPrep, fittingMCR, writingMCR, fittingMCRGPU, acqname, run)
+%   Macro_all(bids_dir, preprocessing, SepiaPrep, fittingMCR, writingMCR, fittingMCRGPU, acqname, run, sub1, sub2, ...)
 %
 % Inputs:
-%   bids_dir      - Path to BIDS directory (default: '/project/3055010.04/RunningProjects/MyelinWaterImaging/bidsSiemensVariantsNew')
-%   preprocessing - Run preprocessing (0/1, default: 1)
-%   SepiaPrep     - Advanced SEPIA preparation (0/1, default: 1)
-%   fittingMCR    - CPU-based fitting (0/1, default: 1)
-%   fittingMCRGPU - GPU-based fitting (0/1, default: 0)
-%   writingMCR    - Result writing (0/1, default: 0)
-%   acqname       - Acquisition name coded in the filename as `sub-label_acq[acqname]FA##_run-#..` (default: 'fl3d')
-%   run           - Run label (default: {'run-1'})
+%   bids_dir        - Path to BIDS directory (default: current directory)')
+%   preprocessing   - Run preprocessing (0/1, default: 1)
+%   SepiaPrep       - Advanced SEPIA preparation (0/1, default: 1)
+%   fittingMCR      - CPU-based fitting (0/1, default: 1)
+%   fittingMCRGPU   - GPU-based fitting (0/1, default: 0)
+%   writingMCR      - Result writing (0/1, default: 0)
+%   acqname         - Acquisition name coded in the filename as `sub-label_acq[acqname]FA##_run-#..` (default: 'fl3d')
+%   run             - Run label (default: {'run-1'})
+%   sub1, sub2, ... - Optional list of subject labels to process (default: all subjects in bids_dir)
+%
+% Examples:
+%   Macro_all('/path/to/bids', 0, 0, 0, 0, 1, 'fl3d')
+%   Macro_all('/path/to/bids', [], [], [], [], [], 'fl3d', 'run-1', 'sub-01', '02')
 
 % Set default values
-def_bids_dir      = '/project/3055010.04/RunningProjects/MyelinWaterImaging/bidsSiemensVariantsNew';
 def_acqname       = 'fl3d';
 def_run_label     = 'run-1';
 def_preprocessing = 1;
@@ -24,26 +28,32 @@ def_SepiaPrep     = 1;
 def_fittingMCR    = 1;
 def_fittingMCRGPU = 0;
 def_writingMCR    = 0;
-if nargin == 1 && ischar(bids_dir) && (strcmpi(bids_dir, '--help') || strcmpi(bids_dir, '-h'))
+
+% Provide help if the first argument is a help request. Useful for compiled versions
+if nargin == 1 && isdeployed && ischar(bids_dir) && (strcmpi(bids_dir, '--help') || strcmpi(bids_dir, '-h'))
     fprintf('Macro_all processes a BIDS directory for Myelin Water Imaging (compiled version)\n\n');
     fprintf('Usage:\n');
-    fprintf('  Macro_all   # uses all defaults\n');
-    fprintf('  Macro_all bids_dir preprocessing SepiaPrep fittingMCR fittingMCRGPU writingMCR acqname run\n\n');
+    fprintf('  run_Macro_all.sh path/to/MCR     # uses all defaults\n');
+    fprintf('  run_Macro_all.sh path/to/MCR bids_dir preprocessing SepiaPrep fittingMCR fittingMCRGPU writingMCR acqname run sub1 sub2 ...\n\n');
     fprintf('Inputs:\n');
-    fprintf('  bids_dir      - Path to BIDS directory (default: %s\n', def_bids_dir);
-    fprintf('  preprocessing - Run preprocessing (0/1, default: %d)\n', def_preprocessing);
-    fprintf('  SepiaPrep     - Advanced SEPIA preparation (0/1, default: %d)\n', def_SepiaPrep);
-    fprintf('  fittingMCR    - CPU-based fitting (0/1, default: %d)\n', def_fittingMCR);
-    fprintf('  fittingMCRGPU - GPU-based fitting (0/1, default: %d)\n\n', def_fittingMCRGPU);
-    fprintf('  writingMCR    - Result writing (0/1, default: %d)\n', def_writingMCR);
-    fprintf('  acqname       - Acquisition name coded in the filename as `sub-label_acq[acqname]FA##_run-#..` (default: %s)\n', def_acqname);
-    fprintf('  run           - Run label (default: %s)\n', def_run_label);
+    fprintf('  bids_dir        - Path to BIDS directory (default: current directory\n');
+    fprintf('  preprocessing   - Run preprocessing (0/1, default: %d)\n', def_preprocessing);
+    fprintf('  SepiaPrep       - Advanced SEPIA preparation (0/1, default: %d)\n', def_SepiaPrep);
+    fprintf('  fittingMCR      - CPU-based fitting (0/1, default: %d)\n', def_fittingMCR);
+    fprintf('  fittingMCRGPU   - GPU-based fitting (0/1, default: %d)\n', def_fittingMCRGPU);
+    fprintf('  writingMCR      - Result writing (0/1, default: %d)\n', def_writingMCR);
+    fprintf('  acqname         - Acquisition name coded in the filename as `sub-label_acq[acqname]FA##_run-#..` (default: %s)\n', def_acqname);
+    fprintf('  run             - Run label (default: %s)\n', def_run_label);
+    fprintf('  sub1, sub2, ... - Optional list of subject labels to process (default: all subjects in bids_dir)\n\n');
+    fprintf('Examples:\n');
+    fprintf('  run_Macro_all.sh path/to/MCR /path/to/bids 1 1 1 0 0 fl3d\n');
+    fprintf('  run_Macro_all.sh path/to/MCR /path/to/bids 0 0 0 0 1 fl3d run-1 sub-01 02\n');
     return
 end
 
 % Handle input arguments (argument blocks are not supported in compiled version)
 if nargin < 1 || isempty(bids_dir)
-    bids_dir = def_bids_dir;
+    bids_dir = pwd;
 end
 if ~isfolder(bids_dir)
     error('BIDS directory not found: %s', bids_dir);
@@ -83,6 +93,22 @@ if isempty(regexp(run_label, 'run-\d+', 'once'))
     warning('Run label %s does not match BIDS pattern "run-<number>"', run_label);
 end
 
+% Collect the subject labels
+if isempty(varargin)
+    subjects = dir(fullfile(bids_dir, 'sub-*'));
+    subjects = subjects([subjects.isdir]);  % Make sure we have only folders
+else
+    subjects = struct('name', varargin);    % Use provided subject names
+    for i = 1:length(subjects)
+        if ~startsWith(subjects(i).name, 'sub-')
+            subjects(i).name = ['sub-' subjects(i).name];
+        end
+        if ~isfolder(fullfile(bids_dir, subjects(i).name))
+            error('Subject folder not found: %s', fullfile(bids_dir, subjects(i).name));
+        end
+    end
+end
+
 % Inform the user about the parameters
 fprintf('\nRunning Macro_all with the following parameters:\n');
 fprintf('       bids_dir: %s\n', bids_dir);
@@ -93,13 +119,12 @@ fprintf('  fittingMCRGPU: %d\n', fittingMCRGPU);
 fprintf('     writingMCR: %d\n', writingMCR);
 fprintf('        acqname: %s\n', acqname);
 fprintf('      run_label: %s\n', run_label);
+fprintf('       subjects: %s\n', strjoin({subjects.name}, ', '));
 
 % Set up the user path. TODO: Remove tinkering with paths, they are static in the compiled version
 code_dir = Macro_all_path;
 
-% Process all subjects in the BIDS directory
-subjects = dir(fullfile(bids_dir, 'sub-*'));
-subjects = subjects([subjects.isdir]);      % Make sure we have only folders
+% Process the subjects in the BIDS directory
 prot.rec = ['acq-' acqname];                % Protocol name, e.g., 'acq-fl3d'. TODO: Parse the protocol from the BIDS directory
 for subjn = 1:length(subjects)
 
@@ -182,10 +207,10 @@ for subjn = 1:length(subjects)
         input.Configfile    = 'ConfigGPU.m';
         output.acq_str      = [prot.rec 'GPU'];
         output.MPPCAdenoise = 0;
-        if canUseGPU
+        if canUseGPU || isdeployed
             func_MCR_AfterCoregistration_gpu(input, output);
         else
-            qsubfeval('func_MCR_AfterCoregistration_gpu', input, output, 'memreq',12*1024^3, 'timreq',jobmaxtime , 'options','--partition=gpu --gpus=nvidia_rtx_a6000:1');
+            qsubfeval(@func_MCR_AfterCoregistration_gpu, input, output, 'memreq',12*1024^3, 'timreq',jobmaxtime , 'options','--partition=gpu --gpus=nvidia_rtx_a6000:1');
         end
     end
 
@@ -197,18 +222,16 @@ function code_dir = Macro_all_path
 % Set and saves the matlab userpath for the compiled version of Macro_all.m
 % Returns the code directory where Macro_all.m is located
 
+code_dir = fileparts(mfilename('fullpath'));
+
 if isdeployed
     return
 end
-
-restoredefaultpath;
-rehash toolboxcache;
 
 % Get the original path
 originalPaths = strsplit(path, pathsep);
 
 % Add the userpaths
-code_dir = fileparts(mfilename('fullpath'));
 addpath(code_dir);
 addpath(fullfile(code_dir,'sepia_1.2.2.5'));            % https://github.com/kschan0214/sepi
 addpath(genpath(fullfile(code_dir,'despot1')));         % https://github.com/kschan0214/despot1
@@ -220,13 +243,11 @@ addpath(genpath(fullfile(code_dir,'gacelle')))          % /project/3055010.04/Ru
 addpath(genpath(fullfile(code_dir,'mwi')));
 sepia_addpath
 
-% Get the new path and find the difference
+% Get the new path and save the difference (needed for creating a compiled version)
 newPaths   = strsplit(path, pathsep);
 addedPaths = setdiff(newPaths, originalPaths);
 addedPaths = addedPaths(~contains(addedPaths, '.git'));
-% addedPaths = addedPaths(~cellfun(@isempty, addedPaths));
-
-% Save to file
+addedPaths = addedPaths(~cellfun(@isempty, addedPaths));
 fid = fopen('Macro_all_paths.txt', 'w');
 for i = 1:numel(addedPaths)
     fprintf(fid, '%s\n', addedPaths{i});

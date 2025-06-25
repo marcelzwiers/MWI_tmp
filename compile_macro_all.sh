@@ -6,7 +6,7 @@
 # Configuration
 MATLAB_COMPILER="/opt/matlab/R2024b/bin/mcc"
 SOURCE_FILE="Macro_all.m"
-OUTPUT_DIR="compiled_output"
+OUTPUT_DIR="compiled_matlab"
 EXCLUDE_PATTERNS=(".git/*" "*.gitignore" "*.gitmodules")
 
 echo "=== Starting compilation (including all non-Git files) ==="

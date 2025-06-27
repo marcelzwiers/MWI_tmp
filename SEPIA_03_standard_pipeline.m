@@ -72,7 +72,7 @@ for flip = 1:length(prot.flip)
     sepia_header_fn = [gre_basename '_header.mat'];
     output_prefix   = [gre_basename '_MEGRE_space-withinGRE'];
 
-    input{flip}(1).name   = fullfile(derivative_SEPIA_dir, magn_fn);
+    input{flip}(1).name   = fullfile(derivative_SEPIA_dir, phase_fn);
     input{flip}(2).name   = fullfile(derivative_SEPIA_dir, magn_fn);
     input{flip}(3).name   = '';
     input{flip}(4).name   = fullfile(derivative_SEPIA_dir, sepia_header_fn);

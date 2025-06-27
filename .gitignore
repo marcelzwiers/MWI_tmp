@@ -1,13 +1,4 @@
-epg/
-EPG-X
-FittingParallelization/
-gacelle/
-mwi/
-qsub/
-sepia_*/
-smt-*/
-despot1/
-compiled_output/
+compiled_matlab/
 +bids/
 mccExcludedFiles.log
 *.asv

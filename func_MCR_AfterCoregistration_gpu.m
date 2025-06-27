@@ -17,14 +17,9 @@ function func_MCR_AfterCoregistration_gpu(input,output)
 % input.CorrectionFactorVFA  scale factor for VFA acquisition (should be some length as number of flip angles) 
 % input.Configfile % config file for MCR-MWI fitting parameters
 
-%
 if ~isfield(output,'MPPCAdenoise')
-
     output.MPPCAdenoise = 0;
-
-end;
-%
-
+end
 
 % example script to process MCR-MWI on a local computer with multi-threads
 % The MCR-MWI processing scripts inside the subject folders were setted up

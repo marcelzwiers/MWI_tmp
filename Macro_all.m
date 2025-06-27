@@ -31,7 +31,7 @@ def_writingMCR    = 0;
 
 % Provide help if the first argument is a help request. Useful for compiled versions
 if nargin == 1 && isdeployed && ischar(bids_dir) && (strcmpi(bids_dir, '--help') || strcmpi(bids_dir, '-h'))
-    fprintf('Macro_all processes a BIDS directory for Myelin Water Imaging (compiled version)\n\n');
+    fprintf('\nMacro_all processes a BIDS directory for Myelin Water Imaging (compiled version)\n\n');
     fprintf('Usage:\n');
     fprintf('  run_Macro_all.sh path/to/MCR     # uses all defaults\n');
     fprintf('  run_Macro_all.sh path/to/MCR bids_dir preprocessing SepiaPrep fittingMCR fittingMCRGPU writingMCR acqname run sub1 sub2 ...\n\n');

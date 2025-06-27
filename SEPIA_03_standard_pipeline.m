@@ -30,6 +30,7 @@ algorParam.qsm.tolerance = 0.03;
 clear input output_basename mask_filename
 for flip = 1:length(prot.flip)
     seq_SEPIA_dir = fullfile(derivative_SEPIA_dir,prot.acq_str{flip});
+    disp(['Trying to create SEPIA dir: ' seq_SEPIA_dir]);
     system(['mkdir -p ',seq_SEPIA_dir]);
     % general GRE basename
     gre_basename    = [subj_label '_' prot.acq_str{flip} '_' run_label];

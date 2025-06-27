@@ -82,9 +82,9 @@ save_nii_quick(complexdata, angle(complexdata.img), PhaseDataMC);
 % 
 % end;
 
-run_command(['rm ', RealData], true)
-run_command(['rm ', ImagData], true)
-run_command(['rm ', RealDataMC], true)
-run_command(['rm ', ImagDataMC], true)
+run_command(['rm ', RealData], true);
+run_command(['rm ', ImagData], true);
+run_command(['rm ', RealDataMC], true);
+run_command(['rm ', ImagDataMC], true);
 
 res = 1;

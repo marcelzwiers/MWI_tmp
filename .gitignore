@@ -2,3 +2,6 @@ compiled_matlab/
 +bids/
 mccExcludedFiles.log
 *.asv
+Macro_all_paths.txt
+compile_macro_all.txt
+marzwi*

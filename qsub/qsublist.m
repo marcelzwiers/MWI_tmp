@@ -188,6 +188,9 @@ switch cmd
             % if the file is there, we can use squeue to verify that the job really left the queue
             [dum, jobstatus] = system(['squeue -j "' pbsid '" -h -o %T']);
             retval = isempty(jobstatus) | contains(jobstatus, 'Invalid job id');
+            if retval == 0
+              fprintf('DEBUG: %s was found but squeue returned job status "%s" for jobid %s and pbsid %s\n', outputfile, jobstatus, jobid, pbsid);
+            end
           end
         case {'local','system'}
           % only return the status based on the presence of the output files

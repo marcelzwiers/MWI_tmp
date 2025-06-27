@@ -112,10 +112,8 @@ AnatB1_target = fullfile(derivative_FSL_dir, [subj_label '_acq-anat_' run_label 
 B1map_target  = fullfile(derivative_FSL_dir, [subj_label '_acq-famp_' run_label '_TB1TFLProtocolSpace.nii.gz']);
 extension     = fullfile(Dataset{count_flip+1}.outdir, 'TransformToProtocolSpace.mat');
 
-% TODO: Fix "No image files match: ./sub-004/fmap/sub-004_acq-anat_run-1_TB1TFL"
 run_command(['flirt -cost mutualinfo -in ' AnatB1 ' -ref ' RefProt ' -out ' AnatB1_target ' -omat ' extension]);
 run_command(['flirt -in ' B1map ' -ref ' RefProt ' -applyxfm -init ' extension ' -out ' B1map_target]);
-
 
 %% Applies co-registration to all the separate datasets
 
@@ -173,9 +171,7 @@ for count_flip = 1:length(prot.flip)
 end
 
 %% Get a brain mask for all datasets based on MRI syntseg
-% 
 % mri_synthseg --i ${converted_b1_dir}${in_vol} --o  ${ANTs_b1_b12gre_dir}${in_vol}_brain --cpu --robust
-
 for count_flip = 1:length(prot.flip)
     gre_basename   = [subj_label '_' prot.acq_str{count_flip} '_' run_label '_echo-1_part-'];
     gre            = [gre_basename 'mag_MEGREProtocolSpace.nii.gz '];

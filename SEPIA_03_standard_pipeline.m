@@ -27,6 +27,7 @@ algorParam.qsm.solver = 'Iterative Tikhonov';
 algorParam.qsm.lambda = 0.05;
 algorParam.qsm.tolerance = 0.03;
 
+clear input output_basename mask_filename
 for flip = 1:length(prot.flip)
     seq_SEPIA_dir = fullfile(derivative_SEPIA_dir,prot.acq_str{flip});
     mkdir(seq_SEPIA_dir)
@@ -41,7 +42,6 @@ for flip = 1:length(prot.flip)
     output_prefix   = [gre_basename '_MEGRE_space-withinGRE'];
 
     % Input/Output filenames
-    clear input output_basename mask_filename
     input{flip}(1).name   = fullfile(derivative_SEPIA_dir, phase_fn);
     input{flip}(2).name   = fullfile(derivative_SEPIA_dir, magn_fn);
     input{flip}(3).name   = '';
@@ -72,7 +72,6 @@ for flip = 1:length(prot.flip)
     sepia_header_fn = [gre_basename '_header.mat'];
     output_prefix   = [gre_basename '_MEGRE_space-withinGRE'];
 
-    clear input
     input{flip}(1).name   = fullfile(derivative_SEPIA_dir, magn_fn);
     input{flip}(2).name   = fullfile(derivative_SEPIA_dir, magn_fn);
     input{flip}(3).name   = '';

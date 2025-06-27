@@ -1,4 +1,4 @@
-function varargout = run_command(command, silent)
+function [status, output] = run_command(command, silent)
 %RUN_COMMAND Execute a shell command and display its output.
 %
 %   [STATUS, OUTPUT] = RUN_COMMAND(COMMAND) prints the specified shell 
@@ -31,9 +31,4 @@ if status ~= 0
     error('Command failed with status %d\nOutput:\n%s', status, output);
 elseif ~silent && ~isempty(output)
     fprintf('%s\n', output);
-end
-
-if nargout > 0
-    varargout{1} = status;
-    varargout{2} = output;
 end

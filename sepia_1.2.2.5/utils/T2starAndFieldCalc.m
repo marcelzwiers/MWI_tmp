@@ -84,7 +84,7 @@ for k=1:dims(4)-1
     temp.hdr.dime.bitpix=16;
     save_nii(temp,'temp.hdr');
 %     run_command('sh  /home/rebelo/Documents/MATLAB/phase_unwrapping/test temp.hdr')
-    run_command('sh  /home/mrphys/kwocha/Tools/phase_unwrap/unwrap temp.hdr')
+    run_command('sh  /home/mrphys/kwocha/Tools/phase_unwrap/unwrap temp.hdr');
     temp=load_nii('uwtemp.hdr');
     temp2(1:dims(1),1:dims(2),1:dims(3),k)=temp.img-round(temp.img(pos(1),pos(2),pos(3))/(2*pi))*2*pi;
 end;

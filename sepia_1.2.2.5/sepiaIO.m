@@ -18,8 +18,15 @@
 %
 function sepiaIO(input,output,maskFullName,algorParam)
 
+disp('DEBUG: inside sepiaIO ----------------')
+disp(['Output directory: ', output]);
+disp(['Input directory: ', input]);
+disp(['Mask filename: ', maskFullName]);
+disp(['Algorithm parameters: ', struct2str(algorParam)]);
+disp(['Filesep: ',filesep])
+disp('---------------------------------------');
 %%% Step 1 %%%
-currDir = pwd;
+%currDir = pwd; % LP: With MCR this might not work
 % 1.1: get and create output directory
 output_index    = strfind(output, filesep);
 outputDir       = output(1:output_index(end));
@@ -105,7 +112,7 @@ end
 % turn off the log
 diary off
 % move back to original directory
-cd(currDir)
+%cd(currDir)
     
 catch ME
     
@@ -113,7 +120,7 @@ catch ME
     disp('There was an error! Please check the command window/error message file for more information.');
     diary off
     % move back to original directory
-    cd(currDir)
+    %cd(currDir)
     
     % open a new text file for error message
     errorMessageFilename = fullfile(outputDir, ['run_sepia.error' identifier]);

@@ -70,7 +70,7 @@ function [hdr, ext, filetype, machine] = load_untouch_header_only(filename)
          filename2 = [filename2, '.hdr.gz'];
 
          tmpDir = tempname;
-         mkdir(tmpDir);
+         system(['mkdir -p ',tmpDir]);
          gzFileName = filename;
 
          filename1 = gunzip(filename1, tmpDir);
@@ -83,7 +83,7 @@ function [hdr, ext, filetype, machine] = load_untouch_header_only(filename)
          filename2 = [filename2, '.img.gz'];
 
          tmpDir = tempname;
-         mkdir(tmpDir);
+         system(['mkdir -p ',tmpDir]);
          gzFileName = filename;
 
          filename1 = gunzip(filename1, tmpDir);
@@ -91,7 +91,7 @@ function [hdr, ext, filetype, machine] = load_untouch_header_only(filename)
          filename = char(filename1);	% convert from cell to string
       elseif strcmp(filename(end-6:end), '.nii.gz')
          tmpDir = tempname;
-         mkdir(tmpDir);
+         system(['mkdir -p ',tmpDir]);
          gzFileName = filename;
          filename = gunzip(filename, tmpDir);
          filename = char(filename);	% convert from cell to string

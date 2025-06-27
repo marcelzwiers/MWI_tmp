@@ -163,7 +163,7 @@ function [nii] = load_nii_no_xform(filename, img_idx, old_RGB, preferredForm)
          filename2 = [filename2, '.hdr.gz'];
 
          tmpDir = tempname;
-         mkdir(tmpDir);
+         system(['mkdir -p ',tmpDir]);
          gzFileName = filename;
 
          filename1 = gunzip(filename1, tmpDir);
@@ -176,7 +176,7 @@ function [nii] = load_nii_no_xform(filename, img_idx, old_RGB, preferredForm)
          filename2 = [filename2, '.img.gz'];
 
          tmpDir = tempname;
-         mkdir(tmpDir);
+         system(['mkdir -p ',tmpDir]);
          gzFileName = filename;
 
          filename1 = gunzip(filename1, tmpDir);
@@ -184,7 +184,7 @@ function [nii] = load_nii_no_xform(filename, img_idx, old_RGB, preferredForm)
          filename = char(filename1);	% convert from cell to string
       elseif strcmp(filename(end-6:end), '.nii.gz')
          tmpDir = tempname;
-         mkdir(tmpDir);
+         system(['mkdir -p ',tmpDir]);
          gzFileName = filename;
          filename = gunzip(filename, tmpDir);
          filename = char(filename);	% convert from cell to string

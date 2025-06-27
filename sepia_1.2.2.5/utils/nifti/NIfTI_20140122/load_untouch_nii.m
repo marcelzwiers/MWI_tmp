@@ -121,7 +121,7 @@ function nii = load_untouch_nii(filename, img_idx, dim5_idx, dim6_idx, dim7_idx,
          filename2 = [filename2, '.hdr.gz'];
 
          tmpDir = tempname;
-         mkdir(tmpDir);
+         system(['mkdir -p ',tmpDir]);
          gzFileName = filename;
 
          filename1 = gunzip(filename1, tmpDir);
@@ -134,7 +134,7 @@ function nii = load_untouch_nii(filename, img_idx, dim5_idx, dim6_idx, dim7_idx,
          filename2 = [filename2, '.img.gz'];
 
          tmpDir = tempname;
-         mkdir(tmpDir);
+         system(['mkdir -p ',tmpDir]);
          gzFileName = filename;
 
          filename1 = gunzip(filename1, tmpDir);
@@ -142,7 +142,7 @@ function nii = load_untouch_nii(filename, img_idx, dim5_idx, dim6_idx, dim7_idx,
          filename = char(filename1);	% convert from cell to string
       elseif strcmp(filename(end-6:end), '.nii.gz')
          tmpDir = tempname;
-         mkdir(tmpDir);
+         system(['mkdir -p ',tmpDir]);
          gzFileName = filename;
          filename = gunzip(filename, tmpDir);
          filename = char(filename);	% convert from cell to string

@@ -29,7 +29,7 @@ algorParam.qsm.tolerance = 0.03;
 
 for flip = 1:length(prot.flip)
     seq_SEPIA_dir = fullfile(derivative_SEPIA_dir,prot.acq_str{flip});
-    mkdir(seq_SEPIA_dir)
+    system(['mkdir -p ',seq_SEPIA_dir]);
     % general GRE basename
     gre_basename    = [subj_label '_' prot.acq_str{flip} '_' run_label];
 

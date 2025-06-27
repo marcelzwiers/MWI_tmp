@@ -150,7 +150,7 @@ function save_untouch_slice(slice, filename, slice_idx, img_idx, dim5_idx, dim6_
          filename2 = [filename2, '.hdr.gz'];
 
          tmpDir = tempname;
-         mkdir(tmpDir);
+         system(['mkdir -p ',tmpDir]);
          gzFileName = filename;
 
          filename1 = gunzip(filename1, tmpDir);
@@ -163,7 +163,7 @@ function save_untouch_slice(slice, filename, slice_idx, img_idx, dim5_idx, dim6_
          filename2 = [filename2, '.img.gz'];
 
          tmpDir = tempname;
-         mkdir(tmpDir);
+         system(['mkdir -p ',tmpDir]);
          gzFileName = filename;
 
          filename1 = gunzip(filename1, tmpDir);
@@ -171,7 +171,7 @@ function save_untouch_slice(slice, filename, slice_idx, img_idx, dim5_idx, dim6_
          filename = char(filename1);    % convert from cell to string
       elseif strcmp(filename(end-6:end), '.nii.gz')
          tmpDir = tempname;
-         mkdir(tmpDir);
+         system(['mkdir -p ',tmpDir]);
          gzFileName = filename;
          filename = gunzip(filename, tmpDir);
          filename = char(filename);     % convert from cell to string

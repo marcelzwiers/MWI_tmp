@@ -150,7 +150,7 @@ for count_flip = 1:length(prot.flip)
 end
 
 if ~isdeployed
-    res = qsubcellfun(@applyxfm4D_MagnPhase, input, 'memreq', 3*1024^3, 'timreq', 10*60, 'stack', 5, 'backend', backend);
+    res = qsubcellfun(@applyxfm4D_MagnPhase, input, 'memreq', 3*1024^3, 'timreq', 10*60, 'stack', 5);
 else
     res = cellfun(@applyxfm4D_MagnPhase, input, 'UniformOutput', false);
 end

@@ -21,6 +21,7 @@ function Macro_all(bids_dir, preprocessing, SepiaPrep, fittingMCR, fittingMCRGPU
 %   Macro_all('/path/to/bids', [], [], [], [], [], 'fl3d', 'run-1', 'sub-01', '02')
 
 % Set default values
+global isdeployed
 def_acqname       = 'fl3d';
 def_run_label     = 'run-1';
 def_preprocessing = 1;

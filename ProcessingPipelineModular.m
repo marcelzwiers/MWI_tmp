@@ -13,7 +13,7 @@ function ProcessingPipelineModular(prot, subj_label, run_label, bids_ses_dir, de
 % 6 Coregister B1 map to S0
 
 % Preparing data
-
+global isdeployed
 for count_echo = 1:length(prot.echo)
     prot.echo_str{count_echo} = ['echo-' num2str(count_echo)];
 end

@@ -22,7 +22,17 @@ if nargin < 1
 end
 
 % specify the toolbox(es) directory
-SpecifyToolboxesDirectory;
+try
+    SpecifyToolboxesDirectory;
+catch
+    MEDI_HOME      = [];
+    STISuite_HOME  = [];
+    FANSI_HOME     = [];
+    SEGUE_HOME     = [];
+    MRITOOLS_HOME  = [];
+    MRISC_HOME     = [];
+end
+
 if isStartCheck
     if ~exist('MEDI_HOME','var')
         MEDI_HOME = [];

@@ -18,13 +18,6 @@
 %
 function sepiaIO(input,output,maskFullName,algorParam)
 
-disp('DEBUG: inside sepiaIO ----------------')
-disp(['Output directory: ', output]);
-disp(['Input directory: ', input]);
-disp(['Mask filename: ', maskFullName]);
-disp(['Algorithm parameters: ', struct2str(algorParam)]);
-disp(['Filesep: ',filesep])
-disp('---------------------------------------');
 %%% Step 1 %%%
 %currDir = pwd; % LP: With MCR this might not work
 % 1.1: get and create output directory

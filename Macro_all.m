@@ -180,26 +180,26 @@ for subjn = 1:length(subjects)
     if fittingMCR || writingMCR
         % Check that MWI toolbox is at the top of the path it has a solver that has conflicts with SEPIA and despot
         % MPPCAdenoise = 1;     % this actually has a positive effect on maps
+        task.Submit_Job           = 0;
+        task.ReSubmit_MissingJobs = 0;
+        task.Read_JobResults      = 0;
         if fittingMCR
-            task.Submit_Job           = 1;
-            task.ReSubmit_MissingJobs = 0;
-            task.Read_JobResults      = 0; % ideally one would have this one as also 1, but that just takes too much time
+              task.Submit_Job           = 1;
         end
         if writingMCR
-            task.Submit_Job           = 0;
             task.ReSubmit_MissingJobs = 1;
             task.Read_JobResults      = 1; % only do this if enough slices have successfully been processed
         end
 
         output.MPPCAdenoise = 0;
         func_MCR_AfterCoregistration_qsubfeval_submitread(input, output, task)
-        output.MPPCAdenoise = 1;
-        func_MCR_AfterCoregistration_qsubfeval_submitread(input, output, task)
+    %    output.MPPCAdenoise = 1;
+    %    func_MCR_AfterCoregistration_qsubfeval_submitread(input, output, task)
 
-        input.Configfile    = 'ConfigDiscardFirstEcho.m';
-        output.acq_str      = [prot.rec 'Echo1corrupted'];
-        output.MPPCAdenoise = 0;
-        func_MCR_AfterCoregistration_qsubfeval_submitread(input, output, task)
+    %    input.Configfile    = 'ConfigDiscardFirstEcho.m';
+    %    output.acq_str      = [prot.rec 'Echo1corrupted'];
+    %    output.MPPCAdenoise = 0;
+    %    func_MCR_AfterCoregistration_qsubfeval_submitread(input, output, task)
 
     end
     if fittingMCRGPU

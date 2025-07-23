@@ -229,6 +229,7 @@ if isdeployed
 end
 
 % Get the original path
+restoredefaultpath
 originalPaths = strsplit(path, pathsep);
 
 % Add the external SEPIA paths from the DCCN repository
@@ -253,6 +254,7 @@ newPaths   = strsplit(path, pathsep);
 addedPaths = setdiff(newPaths, originalPaths);
 addedPaths = addedPaths(~contains(addedPaths, '.git'));
 addedPaths = addedPaths(~cellfun(@isempty, addedPaths));
+fprintf("Saving %d added paths to: Macro_all_paths.txt", numel(addedPaths));
 fid = fopen('Macro_all_paths.txt', 'w');
 for i = 1:numel(addedPaths)
     fprintf(fid, '%s\n', addedPaths{i});

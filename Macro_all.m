@@ -231,16 +231,21 @@ end
 % Get the original path
 originalPaths = strsplit(path, pathsep);
 
+% Add the external SEPIA paths from the DCCN repository
+external_dir = "/home/common/matlab/sepia/external";
+addpath(genpath(fullfile(external_dir, "MRI_susceptibility_calculation", "MRI_susceptibility_calculation_20190912")))
+addpath(genpath(fullfile(external_dir, "SEGUE", "SEGUE_28012021")))
+
 % Add the userpaths
 addpath(code_dir);
-addpath(fullfile(code_dir,'sepia_1.2.2.5'));            % https://github.com/kschan0214/sepi
-addpath(genpath(fullfile(code_dir,'despot1')));         % https://github.com/kschan0214/despot1
-addpath(genpath(fullfile(code_dir,'EPG-X'))); 	        % KCL extended phase graphs
-addpath(genpath(fullfile(code_dir,'utils')));
-addpath(fullfile(code_dir,'MP-PCA-Denoising'));
-addpath(fullfile(code_dir,'qsub'));
+addpath(fullfile(code_dir,'sepia_1.2.2.5'))             % https://github.com/kschan0214/sepi
+addpath(genpath(fullfile(code_dir,'despot1')))          % https://github.com/kschan0214/despot1
+addpath(genpath(fullfile(code_dir,'EPG-X'))) 	        % KCL extended phase graphs
+addpath(genpath(fullfile(code_dir,'utils')))
+addpath(fullfile(code_dir,'MP-PCA-Denoising'))
+addpath(fullfile(code_dir,'qsub'))
 addpath(genpath(fullfile(code_dir,'gacelle')))          % /project/3055010.04/RunningProjects/AskAdam/gacelle/
-addpath(genpath(fullfile(code_dir,'mwi')));
+addpath(genpath(fullfile(code_dir,'mwi')))
 sepia_addpath
 
 % Get the new path and save the difference (needed for creating a compiled version)

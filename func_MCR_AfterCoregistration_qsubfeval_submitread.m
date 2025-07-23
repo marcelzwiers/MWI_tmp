@@ -120,7 +120,7 @@ mask = and(mask,mask_nonnan);
 if ~exist('MPPCAdenoise')
     MPPCAdenoise = 0;
 end
- 
+
 disp(['Denoising:' fullfile(input.derivative_SEPIA_dir, magn_fn)])
 if output.MPPCAdenoise == 1
     if  or(task.ReSubmit_MissingJobs,task.Submit_Job)
@@ -146,22 +146,22 @@ end
 pini = squeeze(unwrappedPhase(:,:,:,1,:)) - 2*pi*totalField .* sepia_header{end}.TE(1);
 Debug = 0;
 if Debug==1
-% figure
-for k=1:nFA
-    figure(100)
-    tiledlayout(ceil(sqrt(nFA)), ceil(sqrt(nFA)))
-    nexttile(1)
-    nexttile
-    Orthoview2(pini(:,:,:,k),[],[],'tight')
-    title(['Initial phase map for FA = ', num2str(fa(k))])
-end
+    % figure
+    for k = 1:nFA
+        figure(100)
+        tiledlayout(ceil(sqrt(nFA)), ceil(sqrt(nFA)))
+        nexttile(1)
+        nexttile
+        Orthoview2(pini(:,:,:,k),[],[],'tight')
+        title(['Initial phase map for FA = ', num2str(fa(k))])
+    end
 end
 pini = polyfit3D_NthOrder( double(mean(pini(:,:,:,1:(end-1)), 4)), mask, 6);
 
 clear unwrappedPhase
 
 
-% % data normalisation
+% data normalisation
 mask_tmp = mask>0;
 
 
@@ -178,15 +178,14 @@ imgParam.rho_mw      = kappa_mw/kappa_iew;
 imgParam.E           = 0.02;
 imgParam.x_i         = -0.1;
 imgParam.x_a         = -0.1;
-imgParam.output_dir = fullfile(output.derivative_MWI_dir, 'MCR', PreProcessing, ['using_', num2str(nFA),'_flipangle'],['quadraticW']);
-gre_basename    = [input.subj_label '_' output.acq_str '_' input.run_label];
+imgParam.output_dir  = fullfile(output.derivative_MWI_dir, 'MCR', PreProcessing, ['using_', num2str(nFA),'_flipangle'],['quadraticW']);
+gre_basename = [input.subj_label '_' output.acq_str '_' input.run_label];
 imgParam.output_filename = [gre_basename '_MEGRE_MWI-MCR_',num2str(nFA),'FA'];
 
 % acquisition parameters
 imgParam.te         = sepia_header{end}.TE;
 imgParam.tr         = tr;
 imgParam.fa         = fa;
-
 
 for slice =1:dims(3)
 
@@ -195,7 +194,6 @@ for slice =1:dims(3)
     imgParamCell{slice}.output_filename = [gre_basename '_MEGRE_MWI-MCR_',num2str(nFA),'FA_slice',num2str(slice)];
 
     if  or(task.ReSubmit_MissingJobs,task.Submit_Job)
- 
         imgParamCell{slice}.img        = img(:,:,slice,:,:)/scaleFactor;
         imgParamCell{slice}.mask       = mask(:,:,slice);
         imgParamCell{slice}.fieldmap   = totalField(:,:,slice,:);
@@ -211,6 +209,7 @@ if task.Submit_Job
         if ~isdeployed
             jobid{slice} = qsubfeval(@mwi_3cx_2R1R2s_dimwi, algoParamCell{slice}, imgParamCell{slice}, 'memreq' , 1e10, 'timreq', 6*3600);
         else
+            algoParamCell{slice}.isParallel = true;     % true: using parfor parallel processing; false: no parfor
             jobid{slice} = mwi_3cx_2R1R2s_dimwi(algoParamCell{slice}, imgParamCell{slice});
         end
     end
@@ -230,17 +229,16 @@ if task.ReSubmit_MissingJobs
     end
 end
 if and(task.ReSubmit_MissingJobs,task.Read_JobResults)
-for kz = 1:dims(3)
-    a = dir(fullfile(imgParamCell{kz}.output_dir,[imgParamCell{kz}.output_filename,'.mat'])) ;
-    while isempty(a)
+    for kz = 1:dims(3)
         a = dir(fullfile(imgParamCell{kz}.output_dir,[imgParamCell{kz}.output_filename,'.mat'])) ;
-
-        T = timer('TimerFcn',@(~,~)disp(['Slice ', num2str(kz),' is not yet ready']),'StartDelay',60);
-        start(T)
-        wait(T)
+        while isempty(a)
+            a = dir(fullfile(imgParamCell{kz}.output_dir,[imgParamCell{kz}.output_filename,'.mat'])) ;
+            T = timer('TimerFcn',@(~,~)disp(['Slice ', num2str(kz),' is not yet ready']),'StartDelay',60);
+            start(T)
+            wait(T)
+        end
+        display(['Slice ', num2str(kz),' is ready'])
     end
-    display(['Slice ', num2str(kz),' is ready'])
-end
 end
 
 
@@ -290,8 +288,7 @@ save_nii_quick(nii,fitRes.exitflag,          fullfile(imgParam.output_dir, [imgP
 save_nii_quick(nii,fitRes.iterations,        fullfile(imgParam.output_dir, [imgParam.output_filename '_numiterations.nii.gz']));
 save_nii_quick(nii,fitRes.mask_fitted,       fullfile(imgParam.output_dir, [imgParam.output_filename '_mask_fittedvoxel.nii.gz']));
 else
-        Alljobsread = 0;
-
+    Alljobsread = 0;
 end
 if Alljobsread == 1 
     for kz = 1:dims(3)

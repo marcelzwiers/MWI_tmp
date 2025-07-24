@@ -13,13 +13,12 @@ algorParam.unwrap.isSaveUnwrappedEcho = 1;
 algorParam.unwrap.excludeMaskThreshold = 0.4;
 algorParam.unwrap.excludeMethod = 'Weighting map';
 % Background field removal algorithm parameters
-algorParam.bfr.refine_method = 'Spherical harmonic';
-algorParam.bfr.refine_order = 2;
-algorParam.bfr.erode_radius = 1;
-algorParam.bfr.method = 'PDF';
-algorParam.bfr.tol = 0.001;
-algorParam.bfr.iteration = 200;
-algorParam.bfr.padSize = 40;
+algorParam.bfr.refine_method = 'None';
+algorParam.bfr.refine_order = 4;
+algorParam.bfr.erode_radius = 0;
+algorParam.bfr.erode_before_radius = 0;
+algorParam.bfr.method = 'VSHARP';
+algorParam.bfr.radius = 12:-1:1;
 % QSM algorithm parameters
 algorParam.qsm.reference_tissue = 'CSF';
 algorParam.qsm.method = 'MRI Suscep. Calc.';

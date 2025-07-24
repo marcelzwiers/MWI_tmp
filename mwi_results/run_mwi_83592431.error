@@ -1,0 +1,19 @@
+The identifier was:
+MATLAB:nonExistentField
+
+The message was:
+
+Unrecognized field name "te".
+
+Error in mwi_3cx_2R1R2s_dimwi>CheckAndSetDefault (line 881)
+if length(imgPara.te) ~= size(imgPara.img,4)
+          ^^^^^^^^^^
+Error in mwi_3cx_2R1R2s_dimwi (line 147)
+[algoPara,imgPara] = CheckAndSetDefault(algoPara,imgPara);
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Error in fexec (line 159)
+    [argout{:}] = feval(fname, argin{:});
+                  ^^^^^^^^^^^^^^^^^^^^^^
+Error in qsubexec (line 95)
+  [argout, optout] = fexec(argin, optin);
+                     ^^^^^^^^^^^^^^^^^^^

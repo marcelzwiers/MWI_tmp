@@ -9,9 +9,9 @@ function Macro_all(bids_dir, preprocessing, SepiaPrep, fittingMCR, fittingMCRGPU
 %   bids_dir        - Path to BIDS directory (default: current directory)')
 %   preprocessing   - Run preprocessing (0/1, default: 1)
 %   SepiaPrep       - Advanced SEPIA preparation (0/1, default: 1)
-%   fittingMCR      - CPU-based fitting (0/1, default: 1)
+%   fittingMCR      - CPU-based fitting (0/1/3, default: 1)
 %   fittingMCRGPU   - GPU-based fitting (0/1, default: 0)
-%   writingMCR      - Result writing (0/1, default: 0)
+%   writingMCR      - Result writing (0/1/3, default: 0)
 %   acqname         - Acquisition name coded in the filename as `sub-label_acq[acqname]FA##_run-#..` (default: 'fl3d')
 %   run             - Run label (default: {'run-1'})
 %   sub1, sub2, ... - Optional list of subject labels to process (default: all subjects in bids_dir)
@@ -28,7 +28,7 @@ def_SepiaPrep     = 1;
 def_fittingMCR    = 1;
 def_fittingMCRGPU = 0;
 def_writingMCR    = 0;
-
+def_debugfitting  = 0;  % Debugging flag for fitting only 3 orthogonal slices
 % Provide help if the first argument is a help request. Useful for compiled versions
 if nargin == 1 && isdeployed && ischar(bids_dir) && (strcmpi(bids_dir, '--help') || strcmpi(bids_dir, '-h'))
     fprintf('\nMacro_all processes a BIDS directory for Myelin Water Imaging (compiled version)\n\n');
@@ -39,7 +39,7 @@ if nargin == 1 && isdeployed && ischar(bids_dir) && (strcmpi(bids_dir, '--help')
     fprintf('  bids_dir        - Path to BIDS directory (default: current directory\n');
     fprintf('  preprocessing   - Run preprocessing (0/1, default: %d)\n', def_preprocessing);
     fprintf('  SepiaPrep       - Advanced SEPIA preparation (0/1, default: %d)\n', def_SepiaPrep);
-    fprintf('  fittingMCR      - CPU-based fitting (0/1, default: %d)\n', def_fittingMCR);
+    fprintf('  fittingMCR      - CPU-based fitting (0/1/3, 3 makes fit for only 3 slices ,default: %d)\n', def_fittingMCR);
     fprintf('  fittingMCRGPU   - GPU-based fitting (0/1, default: %d)\n', def_fittingMCRGPU);
     fprintf('  writingMCR      - Result writing (0/1, default: %d)\n', def_writingMCR);
     fprintf('  acqname         - Acquisition name coded in the filename as `sub-label_acq[acqname]FA##_run-#..` (default: %s)\n', def_acqname);
@@ -71,6 +71,12 @@ end
 if nargin < 4 || isempty(fittingMCR)
     fittingMCR = def_fittingMCR;
 else
+    if strcmp(fittingMCR,'3')
+        fittingMCR = '1'; % Special case for fiting only 3 slices
+        debugfitting = 1; % Enable debugging for this case doing only 3 slices
+    else
+        debugfitting = def_debugfitting;
+    end
     fittingMCR = logical(str2double(fittingMCR));
 end
 if nargin < 5 || isempty(fittingMCRGPU)
@@ -81,7 +87,12 @@ end
 if nargin < 6 || isempty(writingMCR)
     writingMCR = def_writingMCR;
 else
-    writingMCR = logical(str2double(writingMCR));
+    if strcmp(writingMCR,'3')
+        writingMCR = '1'; % Special case for fiting only 3 slices
+        debugfitting = 1; % Enable debugging for this case doing only 3 slices
+    else
+        debugfitting = def_debugfitting;
+    end
 end
 if nargin < 7 || isempty(acqname)
     acqname = def_acqname;
@@ -91,6 +102,9 @@ if nargin < 8 || isempty(run_label)
 end
 if isempty(regexp(run_label, 'run-\d+', 'once'))
     warning('Run label %s does not match BIDS pattern "run-<number>"', run_label);
+end
+if nargin < 9 || isempty(run_label)
+    run_label = def_run_label;
 end
 
 % Collect the subject labels
@@ -174,7 +188,12 @@ for subjn = 1:length(subjects)
     input.B1scaleFactor        = 800;               % directory where json b1 information is present alternatively it can be the scaling factor of B1 field
     input.subj_label           = subj_label;
     input.run_label            = run_label;
-    output.acq_str             = prot.rec;
+    input.debugfitting         = debugfitting;
+    if debugfitting
+        output.acq_str             = [prot.rec,'_3OrtoSlices'];
+    else
+      output.acq_str             = prot.rec;
+    end
     output.derivative_MWI_dir  = derivative_MWI_dir; % main output directory
 
     if fittingMCR || writingMCR
@@ -184,7 +203,8 @@ for subjn = 1:length(subjects)
         task.ReSubmit_MissingJobs = 0;
         task.Read_JobResults      = 0;
         if fittingMCR
-              task.Submit_Job           = 1;
+            
+            task.Submit_Job           = 1;
         end
         if writingMCR
             task.ReSubmit_MissingJobs = 1;
@@ -213,7 +233,7 @@ for subjn = 1:length(subjects)
             qsubfeval(@func_MCR_AfterCoregistration_gpu, input, output, 'memreq',12*1024^3, 'timreq',jobmaxtime , 'options','--partition=gpu --gpus=nvidia_rtx_a6000:1');
         end
     end
-
+    
 end
 disp("Finished processing")
 

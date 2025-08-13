@@ -17,7 +17,11 @@
 SEPIA_version = 'v1.2.2.5';
 
 %% PATH
-SEPIA_HOME = fileparts(mfilename('fullpath'));
+if ~isdeployed
+    SEPIA_HOME = fileparts(mfilename('fullpath'));
+else
+    SEPIA_HOME = fullfile(ctfroot, 'Macro_all', 'sepia_1.2.2.5');
+end
 
 %% General parameterss
 gyro = 42.57747892; % Larmor frequency of 1H, in MHz/T

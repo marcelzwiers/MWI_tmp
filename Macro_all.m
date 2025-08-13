@@ -61,27 +61,27 @@ end
 if nargin < 2 || isempty(preprocessing)
     preprocessing = def_preprocessing;
 else
-    preprocessing = logical(str2double(preprocessing));
+    preprocessing = logical(str2double(string(preprocessing)));
 end
 if nargin < 3 || isempty(SepiaPrep)
     SepiaPrep = def_SepiaPrep;
 else
-    SepiaPrep = logical(str2double(SepiaPrep));
+    SepiaPrep = logical(str2double(string(SepiaPrep)));
 end
 if nargin < 4 || isempty(fittingMCR)
     fittingMCR = def_fittingMCR;
 else
-    fittingMCR = logical(str2double(fittingMCR));
+    fittingMCR = logical(str2double(string(fittingMCR)));
 end
 if nargin < 5 || isempty(fittingMCRGPU)
     fittingMCRGPU = def_fittingMCRGPU;
 else
-    fittingMCRGPU = logical(str2double(fittingMCRGPU));
+    fittingMCRGPU = logical(str2double(string(fittingMCRGPU)));
 end
 if nargin < 6 || isempty(writingMCR)
     writingMCR = def_writingMCR;
 else
-    writingMCR = logical(str2double(writingMCR));
+    writingMCR = logical(str2double(string(writingMCR)));
 end
 if nargin < 7 || isempty(acqname)
     acqname = def_acqname;
@@ -141,7 +141,7 @@ for subjn = 1:length(subjects)
 
     subj_label = subjects(subjn).name;
     subject_directory_master            % Puts foldernames in the worksapce, derived from bids_dir and subj_label
-    fprintf('\n--> Processing: %s (%d/%d)\n', subj_label, subjn, length(subjects));
+    fprintf('\n==> Processing: %s (%d/%d)\n', subj_label, subjn, length(subjects));
     disp(prot)
 
     if preprocessing
@@ -149,9 +149,7 @@ for subjn = 1:length(subjects)
     end
 
     if SepiaPrep
-        if ~isdeployed
-            sepia_addpath
-        end
+        sepia_addpath
         SEPIA_03_standard_pipeline
         script_SCR
     end
@@ -212,10 +210,11 @@ function code_dir = Macro_all_path
 % Set and saves the matlab userpath for the compiled version of Macro_all.m
 % Returns the code directory where Macro_all.m is located
 
-code_dir = fileparts(mfilename('fullpath'));
-
 if isdeployed
+    code_dir = ctfroot;
     return
+else
+    code_dir = fileparts(mfilename('fullpath'));
 end
 
 % Add the external SEPIA paths from the DCCN repository

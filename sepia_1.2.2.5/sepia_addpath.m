@@ -14,6 +14,10 @@
 %
 function sepia_addpath(method, isStartCheck)
 
+if isdeployed
+    return
+end
+
 if nargin < 2
     isStartCheck = 0;
 end

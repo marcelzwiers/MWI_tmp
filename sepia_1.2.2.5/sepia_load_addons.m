@@ -13,7 +13,7 @@
 % DO NOT change the order of the entities, add a new one at the end instead
 %
 %% find addons in these directories
-addons_dir              = fullfile(ctfroot,'sepia_1.2.2.5','addons');
+addons_dir              = fullfile(SEPIA_HOME,'addons');
 addons_unwrap_dir       = fullfile(addons_dir,'phase_unwrap');
 addons_echo_combine_dir	= fullfile(addons_dir,'echo_combine');
 addons_bfr_dir          = fullfile(addons_dir,'bfr');

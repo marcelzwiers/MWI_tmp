@@ -171,15 +171,15 @@ for subjn = 1:length(subjects)
     input.derivative_SEPIA_dir = derivative_SEPIA_dir;
     input.derivative_FSL_dir   = derivative_FSL_dir;
     input.acq_str              = prot.acq_str;
-    input.B1scaleFactor        = 800;               % directory where json b1 information is present alternatively it can be the scaling factor of B1 field
+    input.B1scaleFactor        = 800;                   % directory where json b1 information is present alternatively it can be the scaling factor of B1 field
     input.subj_label           = subj_label;
     input.run_label            = run_label;
     output.acq_str             = prot.rec;
-    output.derivative_MWI_dir  = derivative_MWI_dir; % main output directory
+    output.derivative_MWI_dir  = derivative_MWI_dir;    % main output directory
+    output.MPPCAdenoise        = 0;                     % MPPCAdenoise = 1 actually has a positive effect on maps
 
     if fittingMCR || writingMCR
         % Check that MWI toolbox is at the top of the path it has a solver that has conflicts with SEPIA and despot
-        % MPPCAdenoise = 1;     % this actually has a positive effect on maps
         task.Submit_Job           = 0;
         task.ReSubmit_MissingJobs = 0;
         task.Read_JobResults      = 0;
@@ -190,23 +190,13 @@ for subjn = 1:length(subjects)
             task.ReSubmit_MissingJobs = 1;
             task.Read_JobResults      = 1; % only do this if enough slices have successfully been processed
         end
-
-        output.MPPCAdenoise = 0;
         func_MCR_AfterCoregistration_qsubfeval_submitread(input, output, task)
-    %    output.MPPCAdenoise = 1;
-    %    func_MCR_AfterCoregistration_qsubfeval_submitread(input, output, task)
-
-    %    input.Configfile    = 'ConfigDiscardFirstEcho.m';
-    %    output.acq_str      = [prot.rec 'Echo1corrupted'];
-    %    output.MPPCAdenoise = 0;
-    %    func_MCR_AfterCoregistration_qsubfeval_submitread(input, output, task)
-
     end
+
     if fittingMCRGPU
         jobmaxtime          = 4 * 60^2; % 60 minutes
         input.Configfile    = 'ConfigGPU.m';
         output.acq_str      = [prot.rec 'GPU'];
-        output.MPPCAdenoise = 0;
         if canUseGPU || isdeployed
             func_MCR_AfterCoregistration_gpu(input, output);
         else

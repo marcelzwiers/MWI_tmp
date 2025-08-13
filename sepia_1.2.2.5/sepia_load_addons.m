@@ -13,7 +13,7 @@
 % DO NOT change the order of the entities, add a new one at the end instead
 %
 %% find addons in these directories
-addons_dir              = fullfile(SEPIA_HOME,'addons');
+addons_dir              = fullfile(ctfroot,'sepia_1.2.2.5','addons');
 addons_unwrap_dir       = fullfile(addons_dir,'phase_unwrap');
 addons_echo_combine_dir	= fullfile(addons_dir,'echo_combine');
 addons_bfr_dir          = fullfile(addons_dir,'bfr');
@@ -27,6 +27,7 @@ for klist = 3:length(listing)
     if listing(klist).isdir 
         curr_dir = fullfile(addons_unwrap_dir,listing(klist).name);
         if exist(fullfile(curr_dir,'addon_config.m'),'file')
+            disp(" -> Using addon: " + curr_dir)
             run(fullfile(curr_dir,'addon_config.m'))
             methodUnwrapName{end+1}        = addons.method;
             wrapper_Unwrap_function{end+1} = addons.wrapper_function;

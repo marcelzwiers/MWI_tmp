@@ -29,6 +29,8 @@ bids_anat_dir = [bids_ses_dir '/anat/'];
 [sts, msg] = mkdir(derivative_FSL_dir);
 [sts, msg] = mkdir(derivative_SEPIA_dir);
 
+fprintf("\n--> Preprocessing: %s\n", bids_anat_dir);
+
 for count_flip = 1:length(prot.flip)
 
     Dataset{count_flip}.rec    = prot.rec;
@@ -170,7 +172,7 @@ for count_flip = 1:length(prot.flip)
     run_command(comand_phase);
 end
 
-%% Get a brain mask for all datasets based on MRI syntseg
+%% Get a GM mask for all datasets based on MRI synthseg. TODO: use a single GM mask for all datasets???
 % mri_synthseg --i ${converted_b1_dir}${in_vol} --o  ${ANTs_b1_b12gre_dir}${in_vol}_brain --cpu --robust
 for count_flip = 1:length(prot.flip)
     gre_basename   = [subj_label '_' prot.acq_str{count_flip} '_' run_label '_echo-1_part-'];
@@ -178,8 +180,11 @@ for count_flip = 1:length(prot.flip)
     gre_mag        = [gre_basename 'mag_MEGREProtocolSpace_1mm.nii.gz '];
     gre_seg        = [gre_basename 'mag_MEGREProtocolSpace_1mmseg.nii.gz '];
     command{count_flip} = ['mri_synthseg --i ' fullfile(derivative_FSL_dir, gre) ' --o ' fullfile(derivative_MRI_SYNTHSEG_dir, gre_seg) ' --cpu --robust --resample ' fullfile(derivative_MRI_SYNTHSEG_dir, gre_mag)];
+    if isfolder(fullfile(derivative_MRI_SYNTHSEG_dir, gre_seg))
+        rmdir(fullfile(derivative_MRI_SYNTHSEG_dir, gre_seg), 's');
+    end
 end
-fprintf('$ %s\n$ [..] %d times more\n', command{1}, length(command) - 1);
+fprintf('--> $ %s\n$ [..] %d times more\n', command{1}, length(command) - 1);
 if ~isdeployed
     [status, output] = qsubcellfun(@run_command, command, 'memreq', 15*1024^3, 'timreq', 20*60);
 else
@@ -199,10 +204,10 @@ for count_flip = 1:length(prot.flip)
     if status{count_flip} ~= 0
         error('Command failed with status %d\nCommand:\n%s\nOutput:\n%s', status{count_flip}, command{count_flip}, output{count_flip});
     elseif ~isempty(output{count_flip})
-        fprintf('%s\n', output{count_flip});
+        fprintf(' -> %s\n', output{count_flip});
     end
     if ~isfile(strtrim(fullfile(derivative_MRI_SYNTHSEG_dir, gre_seg)))
-        error(['No output file: ' fullfile(derivative_MRI_SYNTHSEG_dir, gre_seg)])
+        error(['Missing mri_synthseg output file: ' fullfile(derivative_MRI_SYNTHSEG_dir, gre_seg)])
     end
 
     % From here onwards it is just to get the mask on the SEPIA folder

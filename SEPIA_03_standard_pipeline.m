@@ -26,10 +26,15 @@ algorParam.qsm.solver = 'Iterative Tikhonov';
 algorParam.qsm.lambda = 0.05;
 algorParam.qsm.tolerance = 0.03;
 
+fprintf("\n--> Processing SEPIA data for subject %s using:\n", subj_label);
+disp(jsonencode(algorParam))
+
 clear input output_basename mask_filename
 for flip = 1:length(prot.flip)
     seq_SEPIA_dir = fullfile(derivative_SEPIA_dir,prot.acq_str{flip});
-    mkdir(seq_SEPIA_dir)
+    if ~isfolder(seq_SEPIA_dir)
+        mkdir(seq_SEPIA_dir)
+    end
     % general GRE basename
     gre_basename    = [subj_label '_' prot.acq_str{flip} '_' run_label];
 

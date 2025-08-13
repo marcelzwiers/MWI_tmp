@@ -105,7 +105,7 @@ if ~isfield(input,'Configfile')
 else
 
     % load the config file
-    if exist(input.Configfile,'file')
+    if isfile(input.Configfile)
         run(input.Configfile);
     else
         error('Config file not found');

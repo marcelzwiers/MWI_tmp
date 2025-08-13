@@ -27,28 +27,17 @@ done
 # Collect all files except Git-related
 echo "Scanning for files to include..."
 ALL_FILES=()
-while IFS= read -r -d $'\0' file; do
+while IFS= read -r -d '' file; do
     ALL_FILES+=("-a" "$file")
-done < <(find . -type f "${find_exclude[@]}" -print0)
-
-# Get the user paths added during runtime
-if [[ ! -s Macro_all_paths.txt ]]; then
-    echo "Error: Macro_all_paths.txt not found or is empty."
-    exit 1
-fi
-MCR_ARGS=()
-while IFS= read -r path; do
-    # Clean carriage returns (if any) and add to list
-    clean_path=$(echo "$path" | tr -d '\r')
-    MCR_ARGS+=("-a" "$clean_path")
-done < Macro_all_paths.txt
-echo "User paths added: $((${#MCR_ARGS[@]} / 2))"
+done < <(find "$(dirname $0)" \
+              /home/common/matlab/sepia/external/MRI_susceptibility_calculation/MRI_susceptibility_calculation_20190912 \
+              /home/common/matlab/sepia/external/SEGUE/SEGUE_28012021 \
+              -type f "${find_exclude[@]}" -print0)
 
 # Compile command
 echo "Compiling with mcc (${#ALL_FILES[@]} files included)..."
 $MATLAB_COMPILER -m "$SOURCE_FILE" \
     "${ALL_FILES[@]}" \
-    "${MCR_ARGS[@]}" \
     -d "$OUTPUT_DIR" \
     -v \
     -R '-nodisplay' \

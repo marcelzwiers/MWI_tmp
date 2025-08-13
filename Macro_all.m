@@ -184,7 +184,7 @@ for subjn = 1:length(subjects)
         task.ReSubmit_MissingJobs = 0;
         task.Read_JobResults      = 0;
         if fittingMCR
-              task.Submit_Job           = 1;
+            task.Submit_Job           = 1;
         end
         if writingMCR
             task.ReSubmit_MissingJobs = 1;
@@ -228,12 +228,8 @@ if isdeployed
     return
 end
 
-% Get the original path
-restoredefaultpath
-originalPaths = strsplit(path, pathsep);
-
 % Add the external SEPIA paths from the DCCN repository
-external_dir = "/home/common/matlab/sepia/external";
+external_dir = fullfile(filesep, "home", "common", "matlab", "sepia", "external");
 addpath(genpath(fullfile(external_dir, "MRI_susceptibility_calculation", "MRI_susceptibility_calculation_20190912")))
 addpath(genpath(fullfile(external_dir, "SEGUE", "SEGUE_28012021")))
 
@@ -248,15 +244,3 @@ addpath(fullfile(code_dir,'qsub'))
 addpath(genpath(fullfile(code_dir,'gacelle')))          % /project/3055010.04/RunningProjects/AskAdam/gacelle/
 addpath(genpath(fullfile(code_dir,'mwi')))
 sepia_addpath
-
-% Get the new path and save the difference (needed for creating a compiled version)
-newPaths   = strsplit(path, pathsep);
-addedPaths = setdiff(newPaths, originalPaths);
-addedPaths = addedPaths(~contains(addedPaths, '.git'));
-addedPaths = addedPaths(~cellfun(@isempty, addedPaths));
-fprintf("Saving %d added paths to: Macro_all_paths.txt", numel(addedPaths));
-fid = fopen('Macro_all_paths.txt', 'w');
-for i = 1:numel(addedPaths)
-    fprintf(fid, '%s\n', addedPaths{i});
-end
-fclose(fid);

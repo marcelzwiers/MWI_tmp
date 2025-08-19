@@ -7,7 +7,7 @@
 MATLAB_COMPILER="/opt/matlab/R2024b/bin/mcc"
 SOURCE_FILE="Macro_all.m"
 OUTPUT_DIR="compiled_matlab"
-EXCLUDE_PATTERNS=(".git/*" "*.gitignore" "*.gitmodules")
+EXCLUDE_PATTERNS=("./.git/*" "./*.gitignore" "./*.gitmodules" "/home/common/matlab/sepia/external/**/UPDATES.m")
 
 echo "=== Starting compilation (including all non-Git files) ==="
 
@@ -21,7 +21,7 @@ mkdir -p "$OUTPUT_DIR"
 # Build find command for exclusion
 find_exclude=()
 for pattern in "${EXCLUDE_PATTERNS[@]}"; do
-    find_exclude+=(-not -path "./$pattern")
+    find_exclude+=(-not -path "$pattern")
 done
 
 # Collect all folders/files except Git-related
@@ -37,6 +37,7 @@ while IFS= read -r -d '' file; do
 done < <(find "$(dirname "$0")" \
               /home/common/matlab/sepia/external/MRI_susceptibility_calculation/MRI_susceptibility_calculation_20190912 \
               /home/common/matlab/sepia/external/SEGUE/SEGUE_28012021 \
+              /home/common/matlab/sepia/external/MEDI_toolbox/MEDI_toolbox_20200115/ \
               -type f "${find_exclude[@]}" -print0)
 
 # Remove duplicate directories for -I

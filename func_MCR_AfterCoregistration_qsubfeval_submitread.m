@@ -1,4 +1,3 @@
-
 function func_MCR_AfterCoregistration_qsubfeval_submitread(input,output,task)
 % func_MCR_AfterCoregistration_qsubfeval_submitread(input,output)
 % input.acq_str{countflip} %input acq_str of MGRE data
@@ -13,7 +12,7 @@ function func_MCR_AfterCoregistration_qsubfeval_submitread(input,output,task)
 % input.subj_label
 % input.run_label
 % input.MRvendor "Siemens"(deafault) or "Philips" selects the rf spoiling phase
-% input.CorrectionFactorVFA  scale factor for VFA acquisition (should be some length as number of flip angles) 
+% input.CorrectionFactorVFA  scale factor for VFA acquisition (should be some length as number of flip angles)
 % input.Configfile % config file for MCR-MWI fitting parameters
 % task.Submit_Job               % default =1
 % task.ReSubmit_MissingJobs     % default =0
@@ -87,7 +86,6 @@ end
 
 dims = size(img);
 % B1 info
-% true_flip_angle_fn      = [subj_label '_' sess_label '_acq-famp_run-1_TB1TFL_space-withinGRE-' kp{1} '.nii.gz'];
 true_flip_angle_json    = [input.subj_label '_acq-famp_run-1_TB1TFL.json'];
 true_flip_angle_fn      = [input.subj_label '_acq-famp_run-1_TB1TFLProtocolSpace.nii.gz'];
 true_flip_angle         = load_nii_img_only( fullfile(input.derivative_FSL_dir, true_flip_angle_fn));
@@ -117,28 +115,26 @@ mask_nonnan = min(min( ~isnan(img), [], 5), [],4);
 mask = and(mask,mask_nonnan);
 
 %% denoising part
-if ~exist('MPPCAdenoise')
-    MPPCAdenoise = 0;
-end
-
-disp(['Denoising:' fullfile(input.derivative_SEPIA_dir, magn_fn)])
 if output.MPPCAdenoise == 1
+    disp(['Denoising:' fullfile(input.derivative_SEPIA_dir, magn_fn)])
     if  or(task.ReSubmit_MissingJobs,task.Submit_Job)
         [denoised,~,~] = denoise(reshape(img,[dims(1:3) prod(dims(4:5))]),[5 5 5],mask);
         img = reshape(denoised,dims);
         clear denoised
     end
-    PreProcessing ='MPPCAdenoising';
+    PreProcessing = 'MPPCAdenoising';
 else
     if output.MPPCAdenoise == 2
+    disp(['Denoising:' fullfile(input.derivative_SEPIA_dir, magn_fn)])
         if  or(task.ReSubmit_MissingJobs,task.Submit_Job)
             [denoised,~,~] = denoise(reshape(img,[dims(1:3) prod(dims(4:5))]),[3 3 3],mask);
             img = reshape(denoised,dims);
             clear denoised
         end
-        PreProcessing ='MPPCAdenoising3';
+        PreProcessing = 'MPPCAdenoising3';
     else
-        PreProcessing ='no_preprocessing';
+        disp('No Denoising')
+        PreProcessing = 'no_preprocessing';
     end
 end
 
@@ -178,30 +174,50 @@ imgParam.rho_mw      = kappa_mw/kappa_iew;
 imgParam.E           = 0.02;
 imgParam.x_i         = -0.1;
 imgParam.x_a         = -0.1;
-imgParam.output_dir  = fullfile(output.derivative_MWI_dir, 'MCR', PreProcessing, ['using_', num2str(nFA),'_flipangle'],['quadraticW']);
+imgParam.output_dir  = fullfile(output.derivative_MWI_dir, 'MCR', PreProcessing, ['using_' num2str(nFA) '_flipangle'], 'quadraticW');
 gre_basename = [input.subj_label '_' output.acq_str '_' input.run_label];
-imgParam.output_filename = [gre_basename '_MEGRE_MWI-MCR_',num2str(nFA),'FA'];
+imgParam.output_filename = [gre_basename '_MEGRE_MWI-MCR_' num2str(nFA) 'FA'];
 
 % acquisition parameters
 imgParam.te         = sepia_header{end}.TE;
 imgParam.tr         = tr;
 imgParam.fa         = fa;
 
-for slice =1:dims(3)
-
-    algoParamCell{slice} = algoParam;
-    imgParamCell{slice} = imgParam;
-    imgParamCell{slice}.output_filename = [gre_basename '_MEGRE_MWI-MCR_',num2str(nFA),'FA_slice',num2str(slice)];
-
-    if  or(task.ReSubmit_MissingJobs,task.Submit_Job)
-        imgParamCell{slice}.img        = img(:,:,slice,:,:)/scaleFactor;
-        imgParamCell{slice}.mask       = mask(:,:,slice);
-        imgParamCell{slice}.fieldmap   = totalField(:,:,slice,:);
-        imgParamCell{slice}.pini       = pini(:,:,slice,:);
-        imgParamCell{slice}.b1map      = b1(:,:,slice);
-        imgParamCell{slice}.autoSave   = 'true';
+if ~input.orthofit
+    for slice = 1:dims(3)
+        algoParamCell{slice} = algoParam;
+        imgParamCell{slice} = imgParam;
+        imgParamCell{slice}.output_filename = [gre_basename '_MEGRE_MWI-MCR_' num2str(nFA) 'FA_slice' num2str(slice)];
+        if task.ReSubmit_MissingJobs || task.Submit_Job
+            imgParamCell{slice}.img        = img(:,:,slice,:,:)/scaleFactor;
+            imgParamCell{slice}.mask       = mask(:,:,slice);
+            imgParamCell{slice}.fieldmap   = totalField(:,:,slice,:);
+            imgParamCell{slice}.pini       = pini(:,:,slice,:);
+            imgParamCell{slice}.b1map      = b1(:,:,slice);
+            imgParamCell{slice}.autoSave   = 'true';
+        end
     end
-
+else
+    slice = 1;
+    ds_factor = 1;
+    x = 1:ds_factor:dims(1);
+    y = 1:ds_factor:dims(2);
+    z = 1:ds_factor:dims(3);    
+    algoParamCell{slice} = algoParam;
+    imgParamCell{slice}  = imgParam;
+    for fa = 1:dims(5)
+        for echo = 1:dims(4)
+            imgParamCell{slice}.img(:,:,1,echo,fa) = OrthoSlice(img(x,y,z,echo,fa)/scaleFactor.*mask(x,y,z), [], 'tight');
+        end
+        imgParamCell{slice}.fieldmap(:,:,1,fa)   = OrthoSlice(totalField(x,y,z,fa).*mask(x,y,z), [], 'tight');
+        imgParamCell{slice}.b1map(:,:,1,fa)      = OrthoSlice(b1(x,y,z).*mask(x,y,z), [] , 'tight');
+    end
+    imgParamCell{slice}.pini(:,:,1) = OrthoSlice(pini(x,y,z).*mask(x,y,z), [], 'tight');
+    imgParamCell{slice}.mask        = OrthoSlice(mask(x,y,z).*mask(x,y,z), [], 'tight');
+    imgParamCell{slice}.b1map       = OrthoSlice(b1(x,y,z).*mask(x,y,z), [], 'tight');
+    imgParamCell{slice}.autoSave    = 'true';
+    dims = size(imgParamCell{slice}.img);
+    nii = make_nii(imgParamCell{slice}.img, [1 1 1]); % creates a fake nifti with the right shape
 end
 
 if task.Submit_Job
@@ -215,8 +231,8 @@ if task.Submit_Job
 end
 
 if task.ReSubmit_MissingJobs
-    for slice =1:dims(3)
-        a = dir(fullfile(imgParamCell{slice}.output_dir,[imgParamCell{slice}.output_filename,'.mat'])) ;
+    for slice = 1:dims(3)
+        a = dir(fullfile(imgParamCell{slice}.output_dir, [imgParamCell{slice}.output_filename '.mat']));
         if isempty(a)
             disp(['Slice ' num2str(slice) ' was not present: Resubmitting job'])
             if ~isdeployed
@@ -229,10 +245,10 @@ if task.ReSubmit_MissingJobs
 end
 if and(task.ReSubmit_MissingJobs,task.Read_JobResults)
     for kz = 1:dims(3)
-        a = dir(fullfile(imgParamCell{kz}.output_dir,[imgParamCell{kz}.output_filename,'.mat'])) ;
+        a = dir(fullfile(imgParamCell{kz}.output_dir, [imgParamCell{kz}.output_filename '.mat']));
         while isempty(a)
-            a = dir(fullfile(imgParamCell{kz}.output_dir,[imgParamCell{kz}.output_filename,'.mat'])) ;
-            T = timer('TimerFcn',@(~,~)disp(['Slice ', num2str(kz),' is not yet ready']),'StartDelay',60);
+            a = dir(fullfile(imgParamCell{kz}.output_dir, [imgParamCell{kz}.output_filename '.mat']));
+            T = timer('TimerFcn', @(~,~)disp(['Slice ', num2str(kz),' is not yet ready']),'StartDelay',60);
             start(T)
             wait(T)
         end
@@ -247,15 +263,14 @@ MWF = @(x)  x.S0_MW./(x.S0_MW+x.S0_EW+x.S0_IW);
 if task.Read_JobResults
     % read the job results
 
-    try % normaly this is run inside the function that submitter the jobs,
+    try % normaly this is run inside the function that submitted the jobs,
         for kz = 1:dims(3)
-          fitRes(kz) = qsubget(jobid{kz});
+            fitRes(kz) = qsubget(jobid{kz});
         end
         Alljobsread = 1;
     catch % but it could also have been run as a script and load the files
         clear fitRes
         Alljobsread = 1;
-
         for kz = 1:dims(3)
             try
                 a =load(fullfile(imgParamCell{kz}.output_dir,[ imgParamCell{kz}.output_filename, '.mat'])) ;
@@ -270,26 +285,24 @@ if task.Read_JobResults
     end
     fitRes = ConcatStructure(fitRes,3);
 
-
-fitRes.MWF = MWF(fitRes);
-save_nii_quick(nii,fitRes.MWF*100,	fullfile(imgParam.output_dir, [imgParam.output_filename '_MWFmap.nii.gz']));
-save_nii_quick(nii,fitRes.S0_MW,           	fullfile(imgParam.output_dir, [imgParam.output_filename '_M0map-myelinwater.nii.gz']));
-save_nii_quick(nii,fitRes.S0_IW+...
-    fitRes.S0_EW,           fullfile(imgParam.output_dir, [imgParam.output_filename '_M0map-freewater.nii.gz']));
-save_nii_quick(nii,fitRes.R2s_MW,            fullfile(imgParam.output_dir, [imgParam.output_filename '_R2starmap-myelinwater.nii.gz']));
-save_nii_quick(nii,fitRes.R2s_IW,            fullfile(imgParam.output_dir, [imgParam.output_filename '_R2starmap-intraaxonal.nii.gz']));
-save_nii_quick(nii,fitRes.T1_IEW,            fullfile(imgParam.output_dir, [imgParam.output_filename '_T1map-freewater.nii.gz']));
-save_nii_quick(nii,1./fitRes.T1_IEW,            fullfile(imgParam.output_dir, [imgParam.output_filename '_R1map-freewater.nii.gz']));
-save_nii_quick(nii,fitRes.kiewm,             fullfile(imgParam.output_dir, [imgParam.output_filename '_exchangerate-freewatertomyelinwater.nii.gz']));
-save_nii_quick(nii,fitRes.Freq_BKG,          fullfile(imgParam.output_dir, [imgParam.output_filename '_Frequencymap-background.nii.gz']));
-save_nii_quick(nii,fitRes.pini,              fullfile(imgParam.output_dir, [imgParam.output_filename '_Initialphase.nii.gz']));
-save_nii_quick(nii,fitRes.exitflag,          fullfile(imgParam.output_dir, [imgParam.output_filename '_exitflag.nii.gz']));
-save_nii_quick(nii,fitRes.iterations,        fullfile(imgParam.output_dir, [imgParam.output_filename '_numiterations.nii.gz']));
-save_nii_quick(nii,fitRes.mask_fitted,       fullfile(imgParam.output_dir, [imgParam.output_filename '_mask_fittedvoxel.nii.gz']));
+    fitRes.MWF = MWF(fitRes);
+    save_nii_quick(nii,fitRes.MWF*100,	          fullfile(imgParam.output_dir, [imgParam.output_filename '_MWFmap.nii.gz']));
+    save_nii_quick(nii,fitRes.S0_MW,           	  fullfile(imgParam.output_dir, [imgParam.output_filename '_M0map-myelinwater.nii.gz']));
+    save_nii_quick(nii,fitRes.S0_IW+fitRes.S0_EW, fullfile(imgParam.output_dir, [imgParam.output_filename '_M0map-freewater.nii.gz']));
+    save_nii_quick(nii,fitRes.R2s_MW,             fullfile(imgParam.output_dir, [imgParam.output_filename '_R2starmap-myelinwater.nii.gz']));
+    save_nii_quick(nii,fitRes.R2s_IW,             fullfile(imgParam.output_dir, [imgParam.output_filename '_R2starmap-intraaxonal.nii.gz']));
+    save_nii_quick(nii,fitRes.T1_IEW,             fullfile(imgParam.output_dir, [imgParam.output_filename '_T1map-freewater.nii.gz']));
+    save_nii_quick(nii,1./fitRes.T1_IEW,          fullfile(imgParam.output_dir, [imgParam.output_filename '_R1map-freewater.nii.gz']));
+    save_nii_quick(nii,fitRes.kiewm,              fullfile(imgParam.output_dir, [imgParam.output_filename '_exchangerate-freewatertomyelinwater.nii.gz']));
+    save_nii_quick(nii,fitRes.Freq_BKG,           fullfile(imgParam.output_dir, [imgParam.output_filename '_Frequencymap-background.nii.gz']));
+    save_nii_quick(nii,fitRes.pini,               fullfile(imgParam.output_dir, [imgParam.output_filename '_Initialphase.nii.gz']));
+    save_nii_quick(nii,fitRes.exitflag,           fullfile(imgParam.output_dir, [imgParam.output_filename '_exitflag.nii.gz']));
+    save_nii_quick(nii,fitRes.iterations,         fullfile(imgParam.output_dir, [imgParam.output_filename '_numiterations.nii.gz']));
+    save_nii_quick(nii,fitRes.mask_fitted,        fullfile(imgParam.output_dir, [imgParam.output_filename '_mask_fittedvoxel.nii.gz']));
 else
     Alljobsread = 0;
 end
-if Alljobsread == 1 
+if Alljobsread == 1
     for kz = 1:dims(3)
         delete(fullfile(imgParamCell{kz}.output_dir,imgParamCell{kz}.output_filename));
     end
@@ -335,3 +348,42 @@ algoParam.DIMWI.isFreqIW    = false;    % false: no extra DWI info for DIMWI
 % initial guess
 %algoParam.advancedStarting = 'robust';   % initial guesses for multi-comp S0
 algoParam.advancedStarting = 'default';  % initial guesses for multi-comp S0
+
+
+function mosaic = OrthoSlice(volume, xyz, showim)
+% mosaic = OrthoSlice(volume, xyz, showim)
+%
+% Extract orthogonal slices from a 3D volume.
+%
+% Inputs:
+%   volume - 3D volume
+%   xyz    - slice positions (default: center of volume)
+%   showim - display type: 'normal' (default) or 'tight'
+
+% Defaults
+if nargin < 3 || isempty(showim)
+    showim = 'normal';
+end
+if strcmp(showim, 'tight')
+    [x,y,z] = ind2sub(size(volume), find(volume));
+    volume  = volume(min(x):max(x), min(y):max(y), min(z):max(z));
+end
+dims = size(volume);
+if nargin < 2 || isempty(xyz)
+    xyz = round(dims/2);
+end
+
+mosaic = zeros([max(dims(2:3)) 2*dims(1) + dims(2)]);
+temp1  = zeros([size(mosaic,1), dims(2)]);
+temp2  = zeros([size(mosaic,1), dims(1)]);
+temp3  = zeros([size(mosaic,1), dims(1)]);
+if ismember(showim, {'normal','tight'})
+    temp1a = permute(volume(xyz(1),:,:), [3,2,1]);
+    temp2a = permute(volume(:,xyz(2),:), [3,1,2]);
+    temp3a = permute(volume(:,:,xyz(3)), [2,1,3]);
+end
+
+temp1(round((size(temp1,1) - size(temp1a,1))/2) + (1:size(temp1a,1)), :) = temp1a;
+temp2(round((size(temp2,1) - size(temp2a,1))/2) + (1:size(temp2a,1)), :) = temp2a;
+temp3(round((size(temp3,1) - size(temp3a,1))/2) + (1:size(temp3a,1)), :) = temp3a;
+mosaic = cat(2, temp1, temp2, temp3);

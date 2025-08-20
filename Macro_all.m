@@ -9,9 +9,9 @@ function Macro_all(bids_dir, preprocessing, SepiaPrep, fittingMCR, fittingMCRGPU
 %   bids_dir        - Path to BIDS directory (default: current directory)')
 %   preprocessing   - Run preprocessing (0/1, default: 1)
 %   SepiaPrep       - Advanced SEPIA preparation (0/1, default: 1)
-%   fittingMCR      - CPU-based fitting (0/1, default: 1)
+%   fittingMCR      - CPU-based fitting (0/1/3, 3 makes fit for only 3 slices, default: 1)
 %   fittingMCRGPU   - GPU-based fitting (0/1, default: 0)
-%   writingMCR      - Result writing (0/1, default: 0)
+%   writingMCR      - Result writing (0/1/3, 3 writes for only 3 slices, default: 0)
 %   acqname         - Acquisition name coded in the filename as `sub-label_acq[acqname]FA##_run-#..` (default: 'fl3d')
 %   run             - Run label (default: {'run-1'})
 %   sub1, sub2, ... - Optional list of subject labels to process (default: all subjects in bids_dir)
@@ -39,9 +39,9 @@ if nargin == 1 && isdeployed && ischar(bids_dir) && (strcmpi(bids_dir, '--help')
     fprintf('  bids_dir        - Path to BIDS directory (default: current directory\n');
     fprintf('  preprocessing   - Run preprocessing (0/1, default: %d)\n', def_preprocessing);
     fprintf('  SepiaPrep       - Advanced SEPIA preparation (0/1, default: %d)\n', def_SepiaPrep);
-    fprintf('  fittingMCR      - CPU-based fitting (0/1, default: %d)\n', def_fittingMCR);
+    fprintf('  fittingMCR      - CPU-based fitting (0/1/3, 3 makes fit for only 3 slices ,default: %d)\n', def_fittingMCR);
     fprintf('  fittingMCRGPU   - GPU-based fitting (0/1, default: %d)\n', def_fittingMCRGPU);
-    fprintf('  writingMCR      - Result writing (0/1, default: %d)\n', def_writingMCR);
+    fprintf('  writingMCR      - Result writing (0/1/3, 3 writes for only 3 slices, default: %d)\n', def_writingMCR);
     fprintf('  acqname         - Acquisition name coded in the filename as `sub-label_acq[acqname]FA##_run-#..` (default: %s)\n', def_acqname);
     fprintf('  run             - Run label (default: %s)\n', def_run_label);
     fprintf('  sub1, sub2, ... - Optional list of subject labels to process (default: all subjects in bids_dir)\n\n');
@@ -71,7 +71,7 @@ end
 if nargin < 4 || isempty(fittingMCR)
     fittingMCR = def_fittingMCR;
 else
-    fittingMCR = logical(str2double(string(fittingMCR)));
+    fittingMCR = str2double(string(fittingMCR));
 end
 if nargin < 5 || isempty(fittingMCRGPU)
     fittingMCRGPU = def_fittingMCRGPU;
@@ -81,7 +81,7 @@ end
 if nargin < 6 || isempty(writingMCR)
     writingMCR = def_writingMCR;
 else
-    writingMCR = logical(str2double(string(writingMCR)));
+    writingMCR = str2double(string(writingMCR));
 end
 if nargin < 7 || isempty(acqname)
     acqname = def_acqname;
@@ -92,6 +92,7 @@ end
 if isempty(regexp(run_label, 'run-\d+', 'once'))
     warning('Run label %s does not match BIDS pattern "run-<number>"', run_label);
 end
+orthofit = (fittingMCR == 3) || (writingMCR == 3);  % Flag for fitting only 3 orthogonal slices (useful for testing/debugging)
 
 % Collect the subject labels
 if isempty(varargin)
@@ -117,6 +118,7 @@ fprintf('      SepiaPrep: %d\n', SepiaPrep);
 fprintf('     fittingMCR: %d\n', fittingMCR);
 fprintf('  fittingMCRGPU: %d\n', fittingMCRGPU);
 fprintf('     writingMCR: %d\n', writingMCR);
+fprintf('       orthofit: %d\n', orthofit);
 fprintf('        acqname: %s\n', acqname);
 fprintf('      run_label: %s\n', run_label);
 fprintf('       subjects: %s\n', strjoin({subjects.name}, ', '));
@@ -173,6 +175,10 @@ for subjn = 1:length(subjects)
     input.subj_label           = subj_label;
     input.run_label            = run_label;
     output.acq_str             = prot.rec;
+    input.orthofit             = orthofit;
+    if orthofit
+        output.acq_str         = output.acq_str + "_OrthoSlices";
+    end
     output.derivative_MWI_dir  = derivative_MWI_dir;    % main output directory
     output.MPPCAdenoise        = 0;                     % MPPCAdenoise = 1 actually has a positive effect on maps
 
@@ -201,7 +207,7 @@ for subjn = 1:length(subjects)
             qsubfeval(@func_MCR_AfterCoregistration_gpu, input, output, 'memreq',12*1024^3, 'timreq',jobmaxtime , 'options','--partition=gpu --gpus=nvidia_rtx_a6000:1');
         end
     end
-
+    
 end
 disp("Finished processing")
 

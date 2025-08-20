@@ -209,7 +209,6 @@ if task.Submit_Job
         if ~isdeployed
             jobid{slice} = qsubfeval(@mwi_3cx_2R1R2s_dimwi, algoParamCell{slice}, imgParamCell{slice}, 'memreq' , 1e10, 'timreq', 6*3600);
         else
-            algoParamCell{slice}.isParallel = true;     % true: using parfor parallel processing; false: no parfor
             jobid{slice} = mwi_3cx_2R1R2s_dimwi(algoParamCell{slice}, imgParamCell{slice});
         end
     end

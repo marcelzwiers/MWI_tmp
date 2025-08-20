@@ -304,42 +304,39 @@ progress_display(numBatch,fbat,lastBatchEndTime,isRestore);
 isRestore = false;
 
 %%%%%%%%%% fitting main %%%%%%%%%%
-if isParallel
-    %%%%%%%%%% parfor loop %%%%%%%%%%
-    for kbat = (fbat+1):numBatch
-        
-        data    = data_obj(kbat).data;
-%         fm      = data_obj(kbat).fm;
-%         pini    = data_obj(kbat).pini;
-        icvf    = data_obj(kbat).icvf;
-        theta   = data_obj(kbat).theta;
-        ff      = data_obj(kbat).ff;
-        b1map   = data_obj(kbat).b1map;
-        
-        for k = 1:size(data,1)
-            
-            initialGuess(k).pini0   = data_obj(kbat).pini(k,:);   % initial phase
-            initialGuess(k).db0     = data_obj(kbat).fm(k,:);     % fieldmap
-            initialGuess(k).s00     = data_obj(kbat).s00(k);
-            initialGuess(k).t1iew0  = data_obj(kbat).t1iew0(k);
-            initialGuess(k).r2s_sc  = data_obj(kbat).r2s_sc(k);
-            
-            if isfield(data_obj,'mwf0');    initialGuess(k).mwf0    = data_obj(kbat).mwf0(k); end
-            if isfield(data_obj,'t2siew0'); initialGuess(k).t2siew0 = data_obj(kbat).t2siew0(k); end
-        end
-        
-        % start timer
-        tic;
-        % create an empty array for fitting results 
-        estimates = zeros(size(data,1),numEst);
-        resnorm   = zeros(size(data,1),1);
-        iter      = zeros(size(data,1),1);
-        exitflag  = zeros(size(data,1),1);
+for kbat = (fbat+1):numBatch
+
+    data    = data_obj(kbat).data;
+    %         fm      = data_obj(kbat).fm;
+    %         pini    = data_obj(kbat).pini;
+    icvf    = data_obj(kbat).icvf;
+    theta   = data_obj(kbat).theta;
+    ff      = data_obj(kbat).ff;
+    b1map   = data_obj(kbat).b1map;
+
+    initialGuess = struct();
+    for k = 1:size(data,1)
+
+        initialGuess(k).pini0   = data_obj(kbat).pini(k,:);   % initial phase
+        initialGuess(k).db0     = data_obj(kbat).fm(k,:);     % fieldmap
+        initialGuess(k).s00     = data_obj(kbat).s00(k);
+        initialGuess(k).t1iew0  = data_obj(kbat).t1iew0(k);
+        initialGuess(k).r2s_sc  = data_obj(kbat).r2s_sc(k);
+
+        if isfield(data_obj,'mwf0');    initialGuess(k).mwf0    = data_obj(kbat).mwf0(k); end
+        if isfield(data_obj,'t2siew0'); initialGuess(k).t2siew0 = data_obj(kbat).t2siew0(k); end
+    end
+
+    % start timer
+    tic;
+    % create an empty array for fitting results
+    estimates = zeros(size(data,1),numEst);
+    resnorm   = zeros(size(data,1),1);
+    iter      = zeros(size(data,1),1);
+    exitflag  = zeros(size(data,1),1);
+    if isParallel
         parfor k = 1:size(data,1)
-            % T2*w
             s       = squeeze(data(k,:,:));
-%             db0     = squeeze(fm(k,:));
-%             pini0   = squeeze(pini(k,:));
             icvf0   = icvf(k);
             theta0  = squeeze(theta(k,:));  theta0  = theta0(:);
             ff0     = squeeze(ff(k,:));     ff0     = ff0(:);
@@ -349,57 +346,9 @@ if isParallel
             [estimates(k,:),resnorm(k),exitflag(k),iter(k)] = ...
                 FitModel(s,te,tr,fa,b10,icvf0,theta0,ff0,initGuess,epgx,DIMWI,fitAlgor,userDefine,isInvivo,isSelfBoundary,options,DEBUG);
         end
-        lastBatchEndTime = toc;
-        
-        % Finished batch number
-        fbat = kbat;
-        
-        res_obj(kbat).estimates    = estimates;
-        res_obj(kbat).resnorm      = resnorm;
-        res_obj(kbat).iterations   = iter;
-        res_obj(kbat).exitflag     = exitflag;
-        
-        % display progress
-        progress_display(numBatch,fbat,lastBatchEndTime,isRestore);
-        save(temp_filename,'res_obj','fbat','lastBatchEndTime')
-
-    end
-else
-    %%%%%%%%%% ordinary for loop %%%%%%%%%%
-    for kbat=(fbat+1):numBatch
-        
-        data    = data_obj(kbat).data;
-%         fm      = data_obj(kbat).fm;
-%         pini    = data_obj(kbat).pini;
-        icvf    = data_obj(kbat).icvf;
-        theta   = data_obj(kbat).theta;
-        ff      = data_obj(kbat).ff;
-        b1map   = data_obj(kbat).b1map;
-        
+    else
         for k = 1:size(data,1)
-            
-            initialGuess(k).pini0   = data_obj(kbat).pini(k,:);   % initial phase
-            initialGuess(k).db0     = data_obj(kbat).fm(k,:);     % fieldmap
-            initialGuess(k).s00     = data_obj(kbat).s00(k);
-            initialGuess(k).t1iew0  = data_obj(kbat).t1iew0(k);
-            initialGuess(k).r2s_sc  = data_obj(kbat).r2s_sc(k);
-            
-            if isfield(data_obj,'mwf0');    initialGuess(k).mwf0    = data_obj(kbat).mwf0(k); end
-            if isfield(data_obj,'t2siew0'); initialGuess(k).t2siew0 = data_obj(kbat).t2siew0(k); end
-        end
-%         keyboard
-        % start timer
-        tic;
-        % create an empty array for fitting results 
-        estimates = zeros(size(data,1),numEst);
-        resnorm   = zeros(size(data,1),1);
-        iter      = zeros(size(data,1),1);
-        exitflag  = zeros(size(data,1),1);
-        for k = 1:size(data,1)
-            % T2*w
             s       = squeeze(data(k,:,:));
-%             db0     = squeeze(fm(k,:));
-%             pini0   = squeeze(pini(k,:));
             icvf0   = icvf(k);
             theta0  = squeeze(theta(k,:));  theta0  = theta0(:);
             ff0     = squeeze(ff(k,:));     ff0     = ff0(:);
@@ -409,21 +358,21 @@ else
             [estimates(k,:),resnorm(k),exitflag(k),iter(k)] = ...
                 FitModel(s,te,tr,fa,b10,icvf0,theta0,ff0,initGuess,epgx,DIMWI,fitAlgor,userDefine,isInvivo,isSelfBoundary,options,DEBUG);
         end
-        lastBatchEndTime = toc;
-        
-        % Finished batch number
-        fbat = kbat;
-        
-        res_obj(kbat).estimates    = estimates;
-        res_obj(kbat).resnorm      = resnorm;
-        res_obj(kbat).iterations   = iter;
-        res_obj(kbat).exitflag     = exitflag;
-        
-        % display progress
-        progress_display(numBatch,fbat,lastBatchEndTime,isRestore);
-        save(temp_filename,'res_obj','fbat','lastBatchEndTime')
-        
     end
+    lastBatchEndTime = toc;
+
+    % Finished batch number
+    fbat = kbat;
+
+    res_obj(kbat).estimates    = estimates;
+    res_obj(kbat).resnorm      = resnorm;
+    res_obj(kbat).iterations   = iter;
+    res_obj(kbat).exitflag     = exitflag;
+
+    % display progress
+    progress_display(numBatch,fbat,lastBatchEndTime,isRestore);
+    save(temp_filename,'res_obj','fbat','lastBatchEndTime')
+
 end
 fprintf('\n');
 
@@ -432,7 +381,7 @@ tmp1    = [];
 tmp2    = [];
 tmp3    = [];
 tmp4    = [];
-for kbat=1:numBatch
+for kbat = 1:numBatch
     tmp1 = cat(1,tmp1,res_obj(kbat).estimates);
     tmp2 = cat(1,tmp2,res_obj(kbat).resnorm);
     tmp3 = cat(1,tmp3,res_obj(kbat).iterations);

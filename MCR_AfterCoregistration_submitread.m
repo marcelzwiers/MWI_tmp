@@ -1,5 +1,5 @@
-function func_MCR_AfterCoregistration_qsubfeval_submitread(input,output,task)
-% func_MCR_AfterCoregistration_qsubfeval_submitread(input,output)
+function MCR_AfterCoregistration_submitread(input,output,task)
+% MCR_AfterCoregistration_submitread(input,output)
 % input.acq_str{countflip} %input acq_str of MGRE data
 %
 % input.derivative_SEPIA_dir % directory where the following datasets are stored
@@ -14,20 +14,19 @@ function func_MCR_AfterCoregistration_qsubfeval_submitread(input,output,task)
 % input.MRvendor "Siemens"(deafault) or "Philips" selects the rf spoiling phase
 % input.CorrectionFactorVFA  scale factor for VFA acquisition (should be some length as number of flip angles)
 % input.Configfile % config file for MCR-MWI fitting parameters
-% task.Submit_Job               % default =1
-% task.ReSubmit_MissingJobs     % default =0
-% task.Read_JobResults          % default =0
+% task.Submit_Job               % default = 1
+% task.ReSubmit_MissingJobs     % default = 0
+% task.Read_JobResults          % default = 0
 if ~isfield(task, 'Submit_Job')
-    task.Submit_Job = 1; % default value
+    task.Submit_Job = 1;
 end
 if ~isfield(task, 'ReSubmit_MissingJobs')
-    task.ReSubmit_MissingJobs = 0; % default value
+    task.ReSubmit_MissingJobs = 0;
 end
 if ~isfield(task, 'Read_JobResults')
-    task.Read_JobResults = 0; % default value
+    task.Read_JobResults = 0;
 end
-
-if ~isfield(output,'MPPCAdenoise')
+if ~isfield(output, 'MPPCAdenoise')
     output.MPPCAdenoise = 0;
 end
 
@@ -59,7 +58,7 @@ nFA             = (length(input.acq_str));
 fa              = zeros(1,nFA);
 for countflip = 1:length(input.acq_str)
 
-    seq_SEPIA_dir = fullfile(input.derivative_SEPIA_dir,input.acq_str{countflip});
+    seq_SEPIA_dir = fullfile(input.derivative_SEPIA_dir, input.acq_str{countflip});
 
     % general GRE basename
     gre_basename    = [input.subj_label '_' input.acq_str{countflip} '_' input.run_label];
@@ -71,13 +70,13 @@ for countflip = 1:length(input.acq_str)
     mask_fn         = [gre_basename '_MEGRE_space-withinGRE_mask_localfield.nii.gz'];
     sepia_header_fn = [gre_basename '_header.mat'];
     nii             = load_untouch_nii(fullfile(input.derivative_SEPIA_dir, magn_fn));
-    img             = cat(5,img,nii.img);
+    img             = cat(5, img,nii.img);
     nii             = load_untouch_nii(fullfile(seq_SEPIA_dir, phase_fn));
-    unwrappedPhase  = cat(5,unwrappedPhase,nii.img);
+    unwrappedPhase  = cat(5, unwrappedPhase,nii.img);
     sepia_header{countflip}	= load(fullfile(input.derivative_SEPIA_dir, sepia_header_fn));
-    mask            = cat(5,mask, load_nii_img_only(fullfile(seq_SEPIA_dir, mask_fn)));
+    mask            = cat(5, mask, load_nii_img_only(fullfile(seq_SEPIA_dir, mask_fn)));
 
-    totalField = cat(4,totalField, load_nii_img_only(fullfile(seq_SEPIA_dir, totalField_fn)));
+    totalField      = cat(4, totalField, load_nii_img_only(fullfile(seq_SEPIA_dir, totalField_fn)));
 
     fa(countflip)   = sepia_header{countflip}.FA;
     tr              = sepia_header{countflip}.TR; % note that here there is an assumption that all protocols have the same TR
@@ -88,17 +87,14 @@ dims = size(img);
 % B1 info
 true_flip_angle_json    = [input.subj_label '_acq-famp_run-1_TB1TFL.json'];
 true_flip_angle_fn      = [input.subj_label '_acq-famp_run-1_TB1TFLProtocolSpace.nii.gz'];
-true_flip_angle         = load_nii_img_only( fullfile(input.derivative_FSL_dir, true_flip_angle_fn));
+true_flip_angle         = load_nii_img_only(fullfile(input.derivative_FSL_dir, true_flip_angle_fn));
 
 if isfield(input,'B1scaleFactor')
     b1                  = true_flip_angle / input.B1scaleFactor;
 else
-    b1_header           = jsondecode( fileread( fullfile( converted_b1_dir,true_flip_angle_json)));
+    b1_header           = jsondecode(fileread(fullfile(converted_b1_dir, true_flip_angle_json)));
     b1                  = true_flip_angle / 10 / b1_header.FlipAngle;
 end
-% figure
-% Orthoview2(sum(mask,5),[],[],'tight' )
-mask = prod(mask,5);
 
 clear true_flip_angle
 
@@ -110,24 +106,22 @@ if isfield(input,'CorrectionFactorVFA')
     end
 end
 
-mask_nonnan = min(min( ~isnan(img), [], 5), [],4);
-
-mask = and(mask,mask_nonnan);
+mask = all(mask, 5) & all(~isnan(img), [4 5]);  % true where mask is true along 5th dim and no NaNs along 4th/5th dims
 
 %% denoising part
 if output.MPPCAdenoise == 1
     disp(['Denoising:' fullfile(input.derivative_SEPIA_dir, magn_fn)])
     if  or(task.ReSubmit_MissingJobs,task.Submit_Job)
-        [denoised,~,~] = denoise(reshape(img,[dims(1:3) prod(dims(4:5))]),[5 5 5],mask);
+        [denoised,~,~] = denoise(reshape(img,[dims(1:3) prod(dims(4:5))]), [5 5 5], mask);
         img = reshape(denoised,dims);
         clear denoised
     end
     PreProcessing = 'MPPCAdenoising';
 else
     if output.MPPCAdenoise == 2
-    disp(['Denoising:' fullfile(input.derivative_SEPIA_dir, magn_fn)])
+        disp(['Denoising:' fullfile(input.derivative_SEPIA_dir, magn_fn)])
         if  or(task.ReSubmit_MissingJobs,task.Submit_Job)
-            [denoised,~,~] = denoise(reshape(img,[dims(1:3) prod(dims(4:5))]),[3 3 3],mask);
+            [denoised,~,~] = denoise(reshape(img,[dims(1:3) prod(dims(4:5))]), [3 3 3], mask);
             img = reshape(denoised,dims);
             clear denoised
         end
@@ -149,20 +143,15 @@ if Debug==1
         nexttile(1)
         nexttile
         Orthoview2(pini(:,:,:,k),[],[],'tight')
-        title(['Initial phase map for FA = ', num2str(fa(k))])
+        title(['Initial phase map for FA = ' num2str(fa(k))])
     end
 end
 pini = polyfit3D_NthOrder( double(mean(pini(:,:,:,1:(end-1)), 4)), mask, 6);
 
 clear unwrappedPhase
 
-
 % data normalisation
-mask_tmp = mask>0;
-
-
-[scaleFactor, ~] = mwi_image_normalisation(img, mask_tmp);
-clear mask_tmp
+[scaleFactor, ~] = mwi_image_normalisation(img, mask);
 
 % fixed parameters
 kappa_mw    = 0.36; % jung
@@ -202,7 +191,7 @@ else
     ds_factor = 1;
     x = 1:ds_factor:dims(1);
     y = 1:ds_factor:dims(2);
-    z = 1:ds_factor:dims(3);    
+    z = 1:ds_factor:dims(3);
     algoParamCell{slice} = algoParam;
     imgParamCell{slice}  = imgParam;
     for fa = 1:dims(5)
@@ -248,16 +237,16 @@ if and(task.ReSubmit_MissingJobs,task.Read_JobResults)
         a = dir(fullfile(imgParamCell{kz}.output_dir, [imgParamCell{kz}.output_filename '.mat']));
         while isempty(a)
             a = dir(fullfile(imgParamCell{kz}.output_dir, [imgParamCell{kz}.output_filename '.mat']));
-            T = timer('TimerFcn', @(~,~)disp(['Slice ', num2str(kz),' is not yet ready']),'StartDelay',60);
+            T = timer('TimerFcn', @(~,~) disp(['Slice ' num2str(kz)' is not yet ready']), 'StartDelay', 60);
             start(T)
             wait(T)
         end
-        display(['Slice ', num2str(kz),' is ready'])
+        disp(['Slice ' num2str(kz) ' is ready'])
     end
 end
 
 
-MWF = @(x)  x.S0_MW./(x.S0_MW+x.S0_EW+x.S0_IW);
+MWF = @(x) x.S0_MW ./ (x.S0_MW+x.S0_EW+x.S0_IW);
 
 %%
 if task.Read_JobResults
@@ -279,7 +268,7 @@ if task.Read_JobResults
                 Alljobsread = 0;
 
                 fitRes(kz)=fitRes(kz-1);
-                display ([' Did not exist: ', fullfile(imgParamCell{kz}.output_dir,imgParamCell{kz}.output_filename )])
+                disp([' Did not exist: ' fullfile(imgParamCell{kz}.output_dir, imgParamCell{kz}.output_filename)])
             end
         end
     end
@@ -304,86 +293,85 @@ else
 end
 if Alljobsread == 1
     for kz = 1:dims(3)
-        delete(fullfile(imgParamCell{kz}.output_dir,imgParamCell{kz}.output_filename));
+        delete(fullfile(imgParamCell{kz}.output_dir, imgParamCell{kz}.output_filename));
     end
 end
 
 
 function algoParam = get_default_algoParam(input)
-% %% set up and run MCR-MWI fitting
-% % setup algorithm parameters
-algoParam.isInvivo      = true;     % true for using initial guesses for in vivo imaging
-algoParam.isParallel    = false;     % true: using parfor parallel processing; false: no parfor
-algoParam.DEBUG         = false;    % true: debug mode to display some info
-algoParam.isNormData    = false;     % true: normalise the data by a global constant so that absolute tolerance will be used for fitting, here we use false because we did normalisation outside the function, see below
-% fitting option
-algoParam.maxIter       = 200;      % maximum number of iterations
-algoParam.fcnTol        = 1e-4;     % fitting tolerance, this valuse is for normalised data
-algoParam.stepTol       = 1e-4;     % step tolerance, this valuse is for normalised data
-% residual option
-algoParam.numMagn       = 0;        % 0: complex fitting
-algoParam.isWeighted    = true;     % true: using magnitude signal weighting
-algoParam.weightMethod  = 'quadratic_1stEcho';  % '1stEcho': weighted by 1st echo magnitude; 'quadratic_1stEcho': weighted by squared 1st echo magnitude
-% T1 model
-algoParam.isExchange    = 1;        % BM model
-algoParam.isEPG         = 1;        % Using EPG-X for signal simulation
-algoParam.npulse        = 50;       % number of pulses to reach steady-state
-if ~isfield(input,'MRvendor')
-    algoParam.rfphase       = 50;       % RF phase for EPG, degree
-else
-    if strcmp(input.MRvendor,'siemens')||strcmp(input.MRvendor,'Siemens')||strcmp(input.MRvendor,'SIEMENS')
+    % %% set up and run MCR-MWI fitting
+    % % setup algorithm parameters
+    algoParam.isInvivo      = true;     % true for using initial guesses for in vivo imaging
+    algoParam.isParallel    = false;     % true: using parfor parallel processing; false: no parfor
+    algoParam.DEBUG         = false;    % true: debug mode to display some info
+    algoParam.isNormData    = false;     % true: normalise the data by a global constant so that absolute tolerance will be used for fitting, here we use false because we did normalisation outside the function, see below
+    % fitting option
+    algoParam.maxIter       = 200;      % maximum number of iterations
+    algoParam.fcnTol        = 1e-4;     % fitting tolerance, this valuse is for normalised data
+    algoParam.stepTol       = 1e-4;     % step tolerance, this valuse is for normalised data
+    % residual option
+    algoParam.numMagn       = 0;        % 0: complex fitting
+    algoParam.isWeighted    = true;     % true: using magnitude signal weighting
+    algoParam.weightMethod  = 'quadratic_1stEcho';  % '1stEcho': weighted by 1st echo magnitude; 'quadratic_1stEcho': weighted by squared 1st echo magnitude
+    % T1 model
+    algoParam.isExchange    = 1;        % BM model
+    algoParam.isEPG         = 1;        % Using EPG-X for signal simulation
+    algoParam.npulse        = 50;       % number of pulses to reach steady-state
+    if ~isfield(input,'MRvendor')
         algoParam.rfphase       = 50;       % RF phase for EPG, degree
     else
-        algoParam.rfphase       = 150;       % phase increment for Philips
+        if strcmpi(input.MRvendor, 'siemens')
+            algoParam.rfphase       = 50;       % RF phase for EPG, degree
+        else
+            algoParam.rfphase       = 150;      % phase increment for Philips
+        end
     end
-end
 
-algoParam.isT1mw        = false;    % true: fitting myelin water T1, false: use fixed value
-algoParam.T1mw          = 234e-3;   % define fixed myelin water T1 value
-% No DIMWI
-algoParam.DIMWI.isVic       = false;    % false: no extra DWI info for DIMWI
-algoParam.DIMWI.isR2sEW     = false;    % false: no extra DWI info for DIMWI
-algoParam.DIMWI.isFreqMW    = false;    % false: no extra DWI info for DIMWI
-algoParam.DIMWI.isFreqIW    = false;    % false: no extra DWI info for DIMWI
-% initial guess
-%algoParam.advancedStarting = 'robust';   % initial guesses for multi-comp S0
-algoParam.advancedStarting = 'default';  % initial guesses for multi-comp S0
+    algoParam.isT1mw        = false;    % true: fitting myelin water T1, false: use fixed value
+    algoParam.T1mw          = 234e-3;   % define fixed myelin water T1 value
+    % No DIMWI
+    algoParam.DIMWI.isVic       = false;    % false: no extra DWI info for DIMWI
+    algoParam.DIMWI.isR2sEW     = false;    % false: no extra DWI info for DIMWI
+    algoParam.DIMWI.isFreqMW    = false;    % false: no extra DWI info for DIMWI
+    algoParam.DIMWI.isFreqIW    = false;    % false: no extra DWI info for DIMWI
+    % initial guess
+    algoParam.advancedStarting = 'default';  % initial guesses for multi-comp S0
 
 
 function mosaic = OrthoSlice(volume, xyz, showim)
-% mosaic = OrthoSlice(volume, xyz, showim)
-%
-% Extract orthogonal slices from a 3D volume.
-%
-% Inputs:
-%   volume - 3D volume
-%   xyz    - slice positions (default: center of volume)
-%   showim - display type: 'normal' (default) or 'tight'
+    % mosaic = OrthoSlice(volume, xyz, showim)
+    %
+    % Extract orthogonal slices from a 3D volume.
+    %
+    % Inputs:
+    %   volume - 3D volume
+    %   xyz    - slice positions (default: center of volume)
+    %   showim - display type: 'normal' (default) or 'tight'
 
-% Defaults
-if nargin < 3 || isempty(showim)
-    showim = 'normal';
-end
-if strcmp(showim, 'tight')
-    [x,y,z] = ind2sub(size(volume), find(volume));
-    volume  = volume(min(x):max(x), min(y):max(y), min(z):max(z));
-end
-dims = size(volume);
-if nargin < 2 || isempty(xyz)
-    xyz = round(dims/2);
-end
+    % Defaults
+    if nargin < 3 || isempty(showim)
+        showim = 'normal';
+    end
+    if strcmp(showim, 'tight')
+        [x,y,z] = ind2sub(size(volume), find(volume));
+        volume  = volume(min(x):max(x), min(y):max(y), min(z):max(z));
+    end
+    dims = size(volume);
+    if nargin < 2 || isempty(xyz)
+        xyz = round(dims/2);
+    end
 
-mosaic = zeros([max(dims(2:3)) 2*dims(1) + dims(2)]);
-temp1  = zeros([size(mosaic,1), dims(2)]);
-temp2  = zeros([size(mosaic,1), dims(1)]);
-temp3  = zeros([size(mosaic,1), dims(1)]);
-if ismember(showim, {'normal','tight'})
-    temp1a = permute(volume(xyz(1),:,:), [3,2,1]);
-    temp2a = permute(volume(:,xyz(2),:), [3,1,2]);
-    temp3a = permute(volume(:,:,xyz(3)), [2,1,3]);
-end
+    mosaic = zeros([max(dims(2:3)) 2*dims(1) + dims(2)]);
+    temp1  = zeros([size(mosaic,1), dims(2)]);
+    temp2  = zeros([size(mosaic,1), dims(1)]);
+    temp3  = zeros([size(mosaic,1), dims(1)]);
+    if ismember(showim, {'normal','tight'})
+        temp1a = permute(volume(xyz(1),:,:), [3,2,1]);
+        temp2a = permute(volume(:,xyz(2),:), [3,1,2]);
+        temp3a = permute(volume(:,:,xyz(3)), [2,1,3]);
+    end
 
-temp1(round((size(temp1,1) - size(temp1a,1))/2) + (1:size(temp1a,1)), :) = temp1a;
-temp2(round((size(temp2,1) - size(temp2a,1))/2) + (1:size(temp2a,1)), :) = temp2a;
-temp3(round((size(temp3,1) - size(temp3a,1))/2) + (1:size(temp3a,1)), :) = temp3a;
-mosaic = cat(2, temp1, temp2, temp3);
+    temp1(round((size(temp1,1) - size(temp1a,1))/2) + (1:size(temp1a,1)), :) = temp1a;
+    temp2(round((size(temp2,1) - size(temp2a,1))/2) + (1:size(temp2a,1)), :) = temp2a;
+    temp3(round((size(temp3,1) - size(temp3a,1))/2) + (1:size(temp3a,1)), :) = temp3a;
+    mosaic = cat(2, temp1, temp2, temp3);

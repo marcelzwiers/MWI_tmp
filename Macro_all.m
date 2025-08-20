@@ -147,12 +147,12 @@ for subjn = 1:length(subjects)
     disp(prot)
 
     if preprocessing
-        ProcessingPipelineModular(prot, subj_label, run_label, bids_ses_dir, derivative_FSL_dir, derivative_SEPIA_dir, derivative_MRI_SYNTHSEG_dir)
+        mwi_preproc(prot, subj_label, run_label, bids_ses_dir, derivative_FSL_dir, derivative_SEPIA_dir, derivative_MRI_SYNTHSEG_dir)
     end
 
     if SepiaPrep
         sepia_addpath
-        SEPIA_03_standard_pipeline
+        SepiaIO_pipeline
         script_SCR
     end
 
@@ -166,7 +166,7 @@ for subjn = 1:length(subjects)
     else
         disp('Running in compiled mode, not changing paths!!!');
     end
-    
+
     input                      = struct();
     input.derivative_SEPIA_dir = derivative_SEPIA_dir;
     input.derivative_FSL_dir   = derivative_FSL_dir;
@@ -194,7 +194,7 @@ for subjn = 1:length(subjects)
             task.ReSubmit_MissingJobs = 1;
             task.Read_JobResults      = 1; % only do this if enough slices have successfully been processed
         end
-        func_MCR_AfterCoregistration_qsubfeval_submitread(input, output, task)
+        MCR_AfterCoregistration_submitread(input, output, task)
     end
 
     if fittingMCRGPU
@@ -202,12 +202,12 @@ for subjn = 1:length(subjects)
         input.Configfile    = 'ConfigGPU.m';
         output.acq_str      = [prot.rec 'GPU'];
         if canUseGPU || isdeployed
-            func_MCR_AfterCoregistration_gpu(input, output);
+            MCR_AfterCoregistration_gpu(input, output);
         else
-            qsubfeval(@func_MCR_AfterCoregistration_gpu, input, output, 'memreq',12*1024^3, 'timreq',jobmaxtime , 'options','--partition=gpu --gpus=nvidia_rtx_a6000:1');
+            qsubfeval(@MCR_AfterCoregistration_gpu, input, output, 'memreq',12*1024^3, 'timreq',jobmaxtime , 'options','--partition=gpu --gpus=nvidia_rtx_a6000:1');
         end
     end
-    
+
 end
 disp("Finished processing")
 

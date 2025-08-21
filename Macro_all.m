@@ -1,17 +1,17 @@
-function Macro_all(bids_dir, preprocessing, SepiaPrep, fittingMCR, fittingMCRGPU, writingMCR, acqname, run_label, varargin)
+function Macro_all(bids_dir, preprocessing, SepiaPrep, fitMCR, fittingMCRGPU, writeMCR, acqname, run_label, varargin)
 % Process a BIDS directory for Myelin Water Imaging
 %
 % Usage:
 %   Macro_all()     % uses all defaults
-%   Macro_all(bids_dir, preprocessing, SepiaPrep, fittingMCR, writingMCR, fittingMCRGPU, acqname, run, sub1, sub2, ...)
+%   Macro_all(bids_dir, preprocessing, SepiaPrep, fitMCR, writeMCR, fittingMCRGPU, acqname, run, sub1, sub2, ...)
 %
 % Inputs:
 %   bids_dir        - Path to BIDS directory (default: current directory)')
 %   preprocessing   - Run preprocessing (0/1, default: 1)
 %   SepiaPrep       - Advanced SEPIA preparation (0/1, default: 1)
-%   fittingMCR      - CPU-based fitting (0/1/3, 3 makes fit for only 3 slices, default: 1)
+%   fitMCR      - CPU-based fitting (0/1/2/3, 1 = submit missing jobs only, 2 = submit all jobs, 3 = makes fit for only 3 slices, default: 1)
 %   fittingMCRGPU   - GPU-based fitting (0/1, default: 0)
-%   writingMCR      - Result writing (0/1/3, 3 writes for only 3 slices, default: 0)
+%   writeMCR      - Result writing (0/1/3, 3 writes for only 3 slices, default: 0)
 %   acqname         - Acquisition name coded in the filename as `sub-label_acq[acqname]FA##_run-#..` (default: 'fl3d')
 %   run             - Run label (default: {'run-1'})
 %   sub1, sub2, ... - Optional list of subject labels to process (default: all subjects in bids_dir)
@@ -34,14 +34,14 @@ if nargin == 1 && isdeployed && ischar(bids_dir) && (strcmpi(bids_dir, '--help')
     fprintf('\nMacro_all processes a BIDS directory for Myelin Water Imaging (compiled version)\n\n');
     fprintf('Usage:\n');
     fprintf('  run_Macro_all.sh path/to/MCR     # uses all defaults\n');
-    fprintf('  run_Macro_all.sh path/to/MCR bids_dir preprocessing SepiaPrep fittingMCR fittingMCRGPU writingMCR acqname run sub1 sub2 ...\n\n');
+    fprintf('  run_Macro_all.sh path/to/MCR bids_dir preprocessing SepiaPrep fitMCR fittingMCRGPU writeMCR acqname run sub1 sub2 ...\n\n');
     fprintf('Inputs:\n');
     fprintf('  bids_dir        - Path to BIDS directory (default: current directory\n');
     fprintf('  preprocessing   - Run preprocessing (0/1, default: %d)\n', def_preprocessing);
     fprintf('  SepiaPrep       - Advanced SEPIA preparation (0/1, default: %d)\n', def_SepiaPrep);
-    fprintf('  fittingMCR      - CPU-based fitting (0/1/3, 3 makes fit for only 3 slices ,default: %d)\n', def_fittingMCR);
+    fprintf('  fitMCR      - CPU-based fitting (0/1/2/3, 1 = submit missing jobs only, 2 = submit all jobs, 3 = makes fit for only 3 slices, default: %d)\n', def_fittingMCR);
     fprintf('  fittingMCRGPU   - GPU-based fitting (0/1, default: %d)\n', def_fittingMCRGPU);
-    fprintf('  writingMCR      - Result writing (0/1/3, 3 writes for only 3 slices, default: %d)\n', def_writingMCR);
+    fprintf('  writeMCR      - Result writing (0/1/3, 3 writes for only 3 slices, default: %d)\n', def_writingMCR);
     fprintf('  acqname         - Acquisition name coded in the filename as `sub-label_acq[acqname]FA##_run-#..` (default: %s)\n', def_acqname);
     fprintf('  run             - Run label (default: %s)\n', def_run_label);
     fprintf('  sub1, sub2, ... - Optional list of subject labels to process (default: all subjects in bids_dir)\n\n');
@@ -68,20 +68,20 @@ if nargin < 3 || isempty(SepiaPrep)
 else
     SepiaPrep = logical(str2double(string(SepiaPrep)));
 end
-if nargin < 4 || isempty(fittingMCR)
-    fittingMCR = def_fittingMCR;
+if nargin < 4 || isempty(fitMCR)
+    fitMCR = def_fittingMCR;
 else
-    fittingMCR = str2double(string(fittingMCR));
+    fitMCR = str2double(string(fitMCR));
 end
 if nargin < 5 || isempty(fittingMCRGPU)
     fittingMCRGPU = def_fittingMCRGPU;
 else
     fittingMCRGPU = logical(str2double(string(fittingMCRGPU)));
 end
-if nargin < 6 || isempty(writingMCR)
-    writingMCR = def_writingMCR;
+if nargin < 6 || isempty(writeMCR)
+    writeMCR = def_writingMCR;
 else
-    writingMCR = str2double(string(writingMCR));
+    writeMCR = str2double(string(writeMCR));
 end
 if nargin < 7 || isempty(acqname)
     acqname = def_acqname;
@@ -92,7 +92,7 @@ end
 if isempty(regexp(run_label, 'run-\d+', 'once'))
     warning('Run label %s does not match BIDS pattern "run-<number>"', run_label);
 end
-orthofit = (fittingMCR == 3) || (writingMCR == 3);  % Flag for fitting only 3 orthogonal slices (useful for testing/debugging)
+orthofit = (fitMCR == 3) || (writeMCR == 3);  % Flag for fitting only 3 orthogonal slices (useful for testing/debugging)
 
 % Collect the subject labels
 if isempty(varargin)
@@ -115,9 +115,9 @@ fprintf('\nRunning Macro_all with the following parameters:\n');
 fprintf('       bids_dir: %s\n', bids_dir);
 fprintf('  preprocessing: %d\n', preprocessing);
 fprintf('      SepiaPrep: %d\n', SepiaPrep);
-fprintf('     fittingMCR: %d\n', fittingMCR);
+fprintf('     fitMCR: %d\n', fitMCR);
 fprintf('  fittingMCRGPU: %d\n', fittingMCRGPU);
-fprintf('     writingMCR: %d\n', writingMCR);
+fprintf('     writeMCR: %d\n', writeMCR);
 fprintf('       orthofit: %d\n', orthofit);
 fprintf('        acqname: %s\n', acqname);
 fprintf('      run_label: %s\n', run_label);
@@ -177,34 +177,26 @@ for subjn = 1:length(subjects)
     output.acq_str             = prot.rec;
     input.orthofit             = orthofit;
     if orthofit
-        output.acq_str         = output.acq_str + "_OrthoSlices";
+        output.acq_str         = [output.acq_str '_OrthoSlices'];
     end
     output.derivative_MWI_dir  = derivative_MWI_dir;    % main output directory
     output.MPPCAdenoise        = 0;                     % MPPCAdenoise = 1 actually has a positive effect on maps
 
-    if fittingMCR || writingMCR
+    if fitMCR || writeMCR
         % Check that MWI toolbox is at the top of the path it has a solver that has conflicts with SEPIA and despot
-        task.Submit_Job           = 0;
-        task.ReSubmit_MissingJobs = 0;
-        task.Read_JobResults      = 0;
-        if fittingMCR
-            task.Submit_Job           = 1;
-        end
-        if writingMCR
-            task.ReSubmit_MissingJobs = 1;
-            task.Read_JobResults      = 1; % only do this if enough slices have successfully been processed
-        end
-        MCR_AfterCoregistration_submitread(input, output, task)
+        task.fitMCR = fitMCR;
+        task.writeMCR = writeMCR; % only do this if enough slices have successfully been processed
+        MCR_fitwrite(input, output, task)
     end
 
     if fittingMCRGPU
-        jobmaxtime          = 4 * 60^2; % 60 minutes
-        input.Configfile    = 'ConfigGPU.m';
-        output.acq_str      = [prot.rec 'GPU'];
+        jobmaxtime       = 4 * 60^2; % 60 minutes
+        input.Configfile = 'ConfigGPU.m';
+        output.acq_str   = [prot.rec 'GPU'];
         if canUseGPU || isdeployed
-            MCR_AfterCoregistration_gpu(input, output);
+            MCR_fitwrite_gpu(input, output);
         else
-            qsubfeval(@MCR_AfterCoregistration_gpu, input, output, 'memreq',12*1024^3, 'timreq',jobmaxtime , 'options','--partition=gpu --gpus=nvidia_rtx_a6000:1');
+            qsubfeval(@MCR_fitwrite_gpu, input, output, 'memreq',12*1024^3, 'timreq',jobmaxtime , 'options','--partition=gpu --gpus=nvidia_rtx_a6000:1');
         end
     end
 

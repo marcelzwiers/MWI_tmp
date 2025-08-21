@@ -1,4 +1,4 @@
-function MCR_AfterCoregistration_gpu(input, output)
+function MCR_fitwrite_gpu(input, output)
 % % if I am to make this into a function I need the following input:
 % input.acq_str{countflip} %input acq_str of MGRE data
 %
@@ -20,15 +20,7 @@ if ~isfield(output, 'MPPCAdenoise')
     output.MPPCAdenoise = 0;
 end
 
-% example script to process MCR-MWI on a local computer with multi-threads
-% The MCR-MWI processing scripts inside the subject folders were setted up
-% slightly differently because of the parallelisation on HPC vs local PC
-
 %% load GRE data
-% for kp = protocol
-
-% prot_SEPIA_dir  = fullfile(derivative_SEPIA_dir, kp{1});
-% load GRE data
 img             = [];
 unwrappedPhase  = [];
 mask            = [];
@@ -36,7 +28,7 @@ totalField      = [];
 sepia_header    = [];
 nFA             = (length(input.acq_str));
 fa              = zeros(1,nFA);
-for countflip= 1:length(input.acq_str)
+for countflip = 1:length(input.acq_str)
 
     seq_SEPIA_dir = fullfile(input.derivative_SEPIA_dir, input.acq_str{countflip});
 
@@ -63,29 +55,25 @@ for countflip= 1:length(input.acq_str)
     te              = sepia_header{countflip}.TE;
 
 end
-dims =size(img);
+dims = size(img);
 % B1 info
 true_flip_angle_fn      = [input.subj_label '_acq-famp_run-1_TB1TFLProtocolSpace.nii.gz'];
-true_flip_angle         = load_nii_img_only( fullfile(input.derivative_FSL_dir, true_flip_angle_fn));
-
+true_flip_angle         = load_nii_img_only(fullfile(input.derivative_FSL_dir, true_flip_angle_fn));
 b1                      = true_flip_angle / input.B1scaleFactor;
+clear true_flip_angle
 
 figure
 Orthoview2(sum(mask, 5), [], [], 'tight')
-
-clear true_flip_angle
 
 %% obtain the initial estimation of the initial B1 phase
 img = img .* exp(1i*unwrappedPhase);
 
 mask = all(mask, 5) & all(~isnan(img), [4 5]);  % true where mask is true along 5th dim and no NaNs along 4th/5th dims
 
-%%
-
 if ~isfield(input, 'Configfile')
     input.Configfile = [];
-    fixed_params     = get_default_GPUfixParam(input, sepia_header);
-    fitting          = get_default_GPUfitParam(input);
+    fixed_params     = get_default_GPUfixParam(sepia_header);
+    fitting          = get_default_GPUfitParam();
 else
     % load the config file
     if isfile(input.Configfile)
@@ -97,24 +85,20 @@ end
 
 %% denoising part
 if output.MPPCAdenoise == 1
-
     [denoised,~,~] = denoise(reshape(img, [dims(1:3) prod(dims(4:5))]), [5 5 5], mask);
     img = reshape(denoised, dims);
     clear denoised
-
     PreProcessing = 'MPPCAdenoising';
 else
     if output.MPPCAdenoise == 2
         [denoised,~,~] = denoise(reshape(img, [dims(1:3) prod(dims(4:5))]), [3 3 3], mask);
         img = reshape(denoised, dims);
         clear denoised
-
         PreProcessing ='MPPCAdenoising3';
     else
         PreProcessing ='no_preprocessing';
     end
 end
-%%
 
 pini = squeeze(unwrappedPhase(:,:,:,1,:)) - 2*pi*totalField .* sepia_header{end}.TE(1);
 
@@ -143,10 +127,6 @@ if isfield(input,'CorrectionFactorVFA')
     end
 end
 [scaleFactor, ~] = mwi_image_normalisation(img, mask);
-
-imgParam.output_dir = fullfile(output.derivative_MWI_dir, 'MCR', PreProcessing, ['using_' num2str(nFA) '_flipangle'], 'quadraticW');
-
-%%
 
 slices = 1:dims(3);
 extraData = [];
@@ -182,7 +162,7 @@ save_nii_quick(nii,extraData.pini +out_askadam_mcr.final.dpini,             full
 save_nii_quick(nii,mask,                                                    fullfile(imgParam.output_dir, [imgParam.output_filename '_mask_fittedvoxel.nii.gz']));
 
 
-function fixed_params = get_default_GPUfixParam(input, sepia_header)
+function fixed_params = get_default_GPUfixParam(sepia_header)
 kappa_mw                = 0.36; % Jung, NI., myelin water density
 kappa_iew               = 0.86; % Jung, NI., intra-/extra-axonal water density
 fixed_params.B0     	= sepia_header{end}.B0;    % field strength, in tesla
@@ -193,7 +173,8 @@ fixed_params.x_a      	= -0.1; % myelin anisotropic susceptibility, in ppm
 fixed_params.B0dir      = sepia_header{end}.B0_dir;
 fixed_params.t1_mw      = 234e-3;
 
-function fitting = get_default_GPUfitParam(input)
+
+function fitting = get_default_GPUfitParam()
 fitting = [];
 fitting.Nepoch              = 4000;
 fitting.initialLearnRate    = 0.001;    %    start from 0.001 % 0.01 I could not get MWF betweeen 0 and 6...

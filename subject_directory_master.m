@@ -2,7 +2,6 @@
 derivative_dir  = fullfile(bids_dir, 'derivatives');
 
 %% bidscoiner dicm2niix output directories
-% bids_ses_dir        = fullfile(bids_dir, subj_label, sess_label);
 bids_ses_dir        = fullfile(bids_dir, subj_label);
 converted_dwi_dir   = fullfile(bids_ses_dir, 'dwi');
 converted_anat_dir  = fullfile(bids_ses_dir, 'anat');
@@ -20,17 +19,12 @@ derivative_R2star_dir  	= fullfile(derivative_dir, 'R2star',   	subj_label);
 derivative_R1R2s_dir  	= fullfile(derivative_dir, 'SimultaneousR1R2star',   	subj_label);
 
 %% ANTs related directories
-ANTs_gre_within_dir            = fullfile(derivative_ANTs_dir, 'gre_within_protocol_transformation');
-ANTs_gre_apply_within_dir      = fullfile(derivative_ANTs_dir, 'gre_within_protocol_space');
+ANTs_gre_within_dir         = fullfile(derivative_ANTs_dir, 'gre_within_protocol_transformation');
+ANTs_gre_apply_within_dir   = fullfile(derivative_ANTs_dir, 'gre_within_protocol_space');
 
-FSL_gre_within_dir             = fullfile(derivative_FSL_dir, 'gre_within_protocol_transformation');
-FSL_gre_apply_within_dir       = fullfile(derivative_FSL_dir, 'gre_within_protocol_space');
+FSL_gre_within_dir          = fullfile(derivative_FSL_dir, 'gre_within_protocol_transformation');
+FSL_gre_apply_within_dir    = fullfile(derivative_FSL_dir, 'gre_within_protocol_space');
 
-% ANTs_gre_across_dir             = fullfile(derivative_ANTs_dir, 'gre_across_protocols_transformation');
-% ANTs_gre_apply_registration_dir = fullfile(derivative_ANTs_dir, 'gre_across_protocols_space');
-
-ANTs_b1_b12gre_dir              = fullfile(derivative_ANTs_dir, 'b1_2_gre_transformation');
-ANTs_b1_apply_gre_dir           = fullfile(derivative_ANTs_dir, 'b1_2_gre_space');
-prot_ANTs_dir = ANTs_b1_apply_gre_dir;
-% ANTs_b1_b12mp2rage_dir          = fullfile(derivative_ANTs_dir, 'b1_2_mp2rage_transformation');
-% ANTs_b1_apply_mp2rage_dir       = fullfile(derivative_ANTs_dir, 'b1_2_mp2rage_space');
+ANTs_b1_b12gre_dir          = fullfile(derivative_ANTs_dir, 'b1_2_gre_transformation');
+ANTs_b1_apply_gre_dir       = fullfile(derivative_ANTs_dir, 'b1_2_gre_space');
+prot_ANTs_dir               = ANTs_b1_apply_gre_dir;

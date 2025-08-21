@@ -1,4 +1,4 @@
-function ProcessingPipelineModular(prot, subj_label, run_label, bids_ses_dir, derivative_FSL_dir, derivative_SEPIA_dir, derivative_MRI_SYNTHSEG_dir)
+function mwi_preproc(prot, subj_label, run_label, bids_ses_dir, derivative_FSL_dir, derivative_SEPIA_dir, derivative_MRI_SYNTHSEG_dir)
 
 % ProcessingPipeline
 

@@ -25,9 +25,8 @@ img             = [];
 unwrappedPhase  = [];
 mask            = [];
 totalField      = [];
-sepia_header    = [];
-nFA             = (length(input.acq_str));
-fa              = zeros(1,nFA);
+nFA             = length(input.acq_str);
+fa              = zeros(1, nFA);
 for countflip = 1:length(input.acq_str)
 
     seq_SEPIA_dir = fullfile(input.derivative_SEPIA_dir, input.acq_str{countflip});
@@ -41,24 +40,20 @@ for countflip = 1:length(input.acq_str)
     totalField_fn   = [gre_basename '_MEGRE_space-withinGRE_fieldmap.nii.gz'];
     mask_fn         = [gre_basename '_MEGRE_space-withinGRE_mask_localfield.nii.gz'];
     sepia_header_fn = [gre_basename '_header.mat'];
-
-    nii             = load_untouch_nii(fullfile(input.derivative_SEPIA_dir, magn_fn));
-    img             = cat(5, img,nii.img);
-    nii             = load_untouch_nii(fullfile(seq_SEPIA_dir, phase_fn));
-    unwrappedPhase  = cat(5, unwrappedPhase,nii.img);
-    sepia_header{countflip}	= load(fullfile(input.derivative_SEPIA_dir, sepia_header_fn));
-    mask            = cat(5, mask, load_nii_img_only(fullfile(seq_SEPIA_dir, mask_fn)));
-    totalField      = cat(4, totalField, load_nii_img_only(fullfile(seq_SEPIA_dir, totalField_fn)));
-
-    fa(countflip)   = sepia_header{countflip}.FA;
-    tr              = sepia_header{countflip}.TR; % note that here there is an assumption that all protocols have the same TR
-    te              = sepia_header{countflip}.TE;
+    img             = cat(5, img, spm_read_vols(spm_vol(fullfile(input.derivative_SEPIA_dir, magn_fn))));
+    unwrappedPhase  = cat(5, unwrappedPhase, spm_read_vols(spm_vol(fullfile(seq_SEPIA_dir, phase_fn))));
+    sepia_header(countflip)	= load(fullfile(input.derivative_SEPIA_dir, sepia_header_fn));
+    mask            = cat(5, mask, spm_read_vols(spm_vol(fullfile(seq_SEPIA_dir, mask_fn))));
+    totalField      = cat(4, totalField, spm_read_vols(spm_vol(fullfile(seq_SEPIA_dir, totalField_fn))));
+    fa(countflip)   = sepia_header(countflip).FA;
+    tr              = sepia_header(countflip).TR; % note that here there is an assumption that all protocols have the same TR
+    te              = sepia_header(countflip).TE;
 
 end
 dims = size(img);
 % B1 info
-true_flip_angle_fn      = [input.subj_label '_acq-famp_run-1_TB1TFLProtocolSpace.nii.gz'];
-true_flip_angle         = load_nii_img_only(fullfile(input.derivative_FSL_dir, true_flip_angle_fn));
+hdr                     = spm_vol(fullfile(input.derivative_FSL_dir, [input.subj_label '_acq-famp_run-1_TB1TFLProtocolSpace.nii.gz']));
+true_flip_angle         = spm_read_vols(hdr);
 b1                      = true_flip_angle / input.B1scaleFactor;
 clear true_flip_angle
 
@@ -85,13 +80,13 @@ end
 
 %% denoising part
 if output.MPPCAdenoise == 1
-    [denoised,~,~] = denoise(reshape(img, [dims(1:3) prod(dims(4:5))]), [5 5 5], mask);
+    denoised = denoise(reshape(img, [dims(1:3) prod(dims(4:5))]), [5 5 5], mask);
     img = reshape(denoised, dims);
     clear denoised
     PreProcessing = 'MPPCAdenoising';
 else
     if output.MPPCAdenoise == 2
-        [denoised,~,~] = denoise(reshape(img, [dims(1:3) prod(dims(4:5))]), [3 3 3], mask);
+        denoised = denoise(reshape(img, [dims(1:3) prod(dims(4:5))]), [3 3 3], mask);
         img = reshape(denoised, dims);
         clear denoised
         PreProcessing ='MPPCAdenoising3';
@@ -100,12 +95,12 @@ else
     end
 end
 
-pini = squeeze(unwrappedPhase(:,:,:,1,:)) - 2*pi*totalField .* sepia_header{end}.TE(1);
+pini = squeeze(unwrappedPhase(:,:,:,1,:)) - 2*pi*totalField .* sepia_header(end).TE(1);
 
 Debug = 0;
 if Debug==1
     % figure
-    for k=1:nFA
+    for k = 1:nFA
         figure(100)
         tiledlayout(ceil(sqrt(nFA)), ceil(sqrt(nFA)))
         nexttile(1)
@@ -126,7 +121,6 @@ if isfield(input,'CorrectionFactorVFA')
         img(:,:,:,:,countflip) = img(:,:,:,:,countflip) * (input.CorrectionFactorVFA(countflip));
     end
 end
-[scaleFactor, ~] = mwi_image_normalisation(img, mask);
 
 slices = 1:dims(3);
 extraData = [];
@@ -149,28 +143,29 @@ gre_basename             = [input.subj_label '_' output.acq_str '_' input.run_la
 imgParam.output_dir      = fullfile(output.derivative_MWI_dir, 'MCR', PreProcessing, ['using_' num2str(nFA) '_flipangle'], 'quadraticW');
 imgParam.output_filename = [gre_basename '_MEGRE_MWI-MCR_' num2str(nFA) 'FA'];
 
-save_nii_quick(nii,out_askadam_mcr.final.MWF*100,	                        fullfile(imgParam.output_dir, [imgParam.output_filename '_MWFmap.nii.gz']));
-save_nii_quick(nii,out_askadam_mcr.final.MWF.*out_askadam_mcr.final.S0,     fullfile(imgParam.output_dir, [imgParam.output_filename '_M0map-myelinwater.nii.gz']));
-save_nii_quick(nii,(1-out_askadam_mcr.final.MWF).*out_askadam_mcr.final.S0, fullfile(imgParam.output_dir, [imgParam.output_filename '_M0map-freewater.nii.gz']));
-save_nii_quick(nii,out_askadam_mcr.final.R2sMW,                             fullfile(imgParam.output_dir, [imgParam.output_filename '_R2starmap-myelinwater.nii.gz']));
-save_nii_quick(nii,out_askadam_mcr.final.R2sIW,                             fullfile(imgParam.output_dir, [imgParam.output_filename '_R2starmap-intraaxonal.nii.gz']));
-save_nii_quick(nii,1./out_askadam_mcr.final.R1IEW,                          fullfile(imgParam.output_dir, [imgParam.output_filename '_T1map-freewater.nii.gz']));
-save_nii_quick(nii,out_askadam_mcr.final.R1IEW,                             fullfile(imgParam.output_dir, [imgParam.output_filename '_R1map-freewater.nii.gz']));
-save_nii_quick(nii,out_askadam_mcr.final.kIEWM,                             fullfile(imgParam.output_dir, [imgParam.output_filename '_exchangerate-freewatertomyelinwater.nii.gz']));
-save_nii_quick(nii,out_askadam_mcr.final.dfreqBKG,                          fullfile(imgParam.output_dir, [imgParam.output_filename '_Frequencymap-background.nii.gz']));
-save_nii_quick(nii,extraData.pini +out_askadam_mcr.final.dpini,             fullfile(imgParam.output_dir, [imgParam.output_filename '_Initialphase.nii.gz']));
-save_nii_quick(nii,mask,                                                    fullfile(imgParam.output_dir, [imgParam.output_filename '_mask_fittedvoxel.nii.gz']));
+hdr.dim = dims(1:3);
+spm_write_vol_gz(hdr, out_askadam_mcr.final.MWF * 100,	                         fullfile(imgParam.output_dir, [imgParam.output_filename '_MWFmap.nii.gz']));
+spm_write_vol_gz(hdr, out_askadam_mcr.final.MWF .* out_askadam_mcr.final.S0,     fullfile(imgParam.output_dir, [imgParam.output_filename '_M0map-myelinwater.nii.gz']));
+spm_write_vol_gz(hdr, (1-out_askadam_mcr.final.MWF) .* out_askadam_mcr.final.S0, fullfile(imgParam.output_dir, [imgParam.output_filename '_M0map-freewater.nii.gz']));
+spm_write_vol_gz(hdr, out_askadam_mcr.final.R2sMW,                               fullfile(imgParam.output_dir, [imgParam.output_filename '_R2starmap-myelinwater.nii.gz']));
+spm_write_vol_gz(hdr, out_askadam_mcr.final.R2sIW,                               fullfile(imgParam.output_dir, [imgParam.output_filename '_R2starmap-intraaxonal.nii.gz']));
+spm_write_vol_gz(hdr, 1 ./ out_askadam_mcr.final.R1IEW,                          fullfile(imgParam.output_dir, [imgParam.output_filename '_T1map-freewater.nii.gz']));
+spm_write_vol_gz(hdr, out_askadam_mcr.final.R1IEW,                               fullfile(imgParam.output_dir, [imgParam.output_filename '_R1map-freewater.nii.gz']));
+spm_write_vol_gz(hdr, out_askadam_mcr.final.kIEWM,                               fullfile(imgParam.output_dir, [imgParam.output_filename '_exchangerate-freewatertomyelinwater.nii.gz']));
+% spm_write_vol_gz(hdr, out_askadam_mcr.final.dfreqBKG,                          fullfile(imgParam.output_dir, [imgParam.output_filename '_Frequencymap-background.nii.gz']));  % = 4D, spm_write_vol can only handle a maximum of 3 dimensions
+spm_write_vol_gz(hdr, extraData.pini + out_askadam_mcr.final.dpini,              fullfile(imgParam.output_dir, [imgParam.output_filename '_Initialphase.nii.gz']));
+spm_write_vol_gz(hdr, mask,                                                      fullfile(imgParam.output_dir, [imgParam.output_filename '_mask_fittedvoxel.nii.gz']));
 
 
 function fixed_params = get_default_GPUfixParam(sepia_header)
 kappa_mw                = 0.36; % Jung, NI., myelin water density
 kappa_iew               = 0.86; % Jung, NI., intra-/extra-axonal water density
-fixed_params.B0     	= sepia_header{end}.B0;    % field strength, in tesla
+fixed_params.B0     	= sepia_header(end).B0;    % field strength, in tesla
 fixed_params.rho_mw    	= kappa_mw/kappa_iew; % relative myelin water density
 fixed_params.E      	= 0.02; % exchange effect in signal phase, in ppm
 fixed_params.x_i      	= -0.1; % myelin isotropic susceptibility, in ppm
 fixed_params.x_a      	= -0.1; % myelin anisotropic susceptibility, in ppm
-fixed_params.B0dir      = sepia_header{end}.B0_dir;
+fixed_params.B0dir      = sepia_header(end).B0_dir;
 fixed_params.t1_mw      = 234e-3;
 
 

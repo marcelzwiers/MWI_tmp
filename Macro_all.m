@@ -9,9 +9,9 @@ function Macro_all(bids_dir, preprocessing, SepiaPrep, fitMCR, fittingMCRGPU, wr
 %   bids_dir        - Path to BIDS directory (default: current directory)')
 %   preprocessing   - Run preprocessing (0/1, default: 1)
 %   SepiaPrep       - Advanced SEPIA preparation (0/1, default: 1)
-%   fitMCR      - CPU-based fitting (0/1/2/3, 1 = submit missing jobs only, 2 = submit all jobs, 3 = makes fit for only 3 slices, default: 1)
+%   fitMCR          - CPU-based fitting (0/1/2/3, 1 = submit missing jobs only, 2 = submit all jobs, 3 = makes fit for only 3 slices, default: 1)
 %   fittingMCRGPU   - GPU-based fitting (0/1, default: 0)
-%   writeMCR      - Result writing (0/1/3, 3 writes for only 3 slices, default: 0)
+%   writeMCR        - Result writing (0/1/3, 3 writes for only 3 slices, default: 0)
 %   acqname         - Acquisition name coded in the filename as `sub-label_acq[acqname]FA##_run-#..` (default: 'fl3d')
 %   run             - Run label (default: {'run-1'})
 %   sub1, sub2, ... - Optional list of subject labels to process (default: all subjects in bids_dir)
@@ -39,9 +39,9 @@ if nargin == 1 && isdeployed && ischar(bids_dir) && (strcmpi(bids_dir, '--help')
     fprintf('  bids_dir        - Path to BIDS directory (default: current directory\n');
     fprintf('  preprocessing   - Run preprocessing (0/1, default: %d)\n', def_preprocessing);
     fprintf('  SepiaPrep       - Advanced SEPIA preparation (0/1, default: %d)\n', def_SepiaPrep);
-    fprintf('  fitMCR      - CPU-based fitting (0/1/2/3, 1 = submit missing jobs only, 2 = submit all jobs, 3 = makes fit for only 3 slices, default: %d)\n', def_fittingMCR);
+    fprintf('  fitMCR          - CPU-based fitting (0/1/2/3, 1 = submit missing jobs only, 2 = submit all jobs, 3 = makes fit for only 3 slices, default: %d)\n', def_fittingMCR);
     fprintf('  fittingMCRGPU   - GPU-based fitting (0/1, default: %d)\n', def_fittingMCRGPU);
-    fprintf('  writeMCR      - Result writing (0/1/3, 3 writes for only 3 slices, default: %d)\n', def_writingMCR);
+    fprintf('  writeMCR        - Result writing (0/1/3, 3 writes for only 3 slices, default: %d)\n', def_writingMCR);
     fprintf('  acqname         - Acquisition name coded in the filename as `sub-label_acq[acqname]FA##_run-#..` (default: %s)\n', def_acqname);
     fprintf('  run             - Run label (default: %s)\n', def_run_label);
     fprintf('  sub1, sub2, ... - Optional list of subject labels to process (default: all subjects in bids_dir)\n\n');

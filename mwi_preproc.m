@@ -62,16 +62,15 @@ Dataset{count_flip+1}.outdir = fullfile(derivative_FSL_dir, 'B1map');
 json_str = fileread(fullfile(list_json{1}(1).folder, list_json{1}(1).name));
 data     = jsondecode(json_str);
 TR       = data.RepetitionTime;
-S0       = load_untouch_nii(fullfile(list_mag{1}(1).folder, list_mag{1}(1).name));
-dims     = size (S0.img);
-tempS0   = zeros([dims length(prot.flip)]);
+hdr      = spm_vol(fullfile(list_mag{1}(1).folder, list_mag{1}(1).name));
+tempS0   = zeros([hdr.dim length(prot.flip)]);
 
 % Computes a T1 maps and S0 map
 for count_flip = 1:length(prot.flip)
     gre_basename = [subj_label '_' prot.acq_str{count_flip} '_' run_label '_echo-1_part-mag_MEGRE.nii.gz'];
-    S0  = load_untouch_nii(fullfile(list_mag{count_flip}(1).folder, gre_basename));
-    tempS0 (:,:,:,count_flip) = S0.img;
-    S0_target{count_flip} = ((fullfile(Dataset{count_flip}.outdir, 'EstimateFromT1mappping')));
+    hdr          = spm_vol(fullfile(list_mag{count_flip}(1).folder, gre_basename));
+    tempS0 (:,:,:,count_flip) = spm_read_vols(hdr);
+    S0_target{count_flip} = fullfile(Dataset{count_flip}.outdir, 'EstimateFromT1mappping');
 end
 [T1, M0] = despot1_mapping(tempS0, prot.flip, TR, []);
 
@@ -82,11 +81,11 @@ for count_flip = 1:length(prot.flip)
     temp = M0 .* GRESignal(prot.flip(count_flip), TR, T1);
     temp(isinf(temp)) = 0;
     temp(isnan(temp)) = 0;
-    save_nii_quick(S0, temp, S0_target{count_flip});
+    spm_write_vol_gz(hdr, temp, [S0_target{count_flip} '.nii.gz']);
 end
 
 S0_target{count_flip+1} = fullfile(Dataset{count_flip+1}.outdir, 'EstimateFromT1mappping');
-save_nii_quick(S0, M0, S0_target{count_flip+1});
+spm_write_vol_gz(hdr, M0, [S0_target{count_flip+1} '.nii.gz']);
 clear tempS0
 
 %% Making a fast M0 and T1 mapping
